@@ -33,6 +33,14 @@ class ProductCreateResponse(BaseModel):
     id: uuid.UUID
 
 
+class ProductUpdateRequest(BaseModel):
+    sku: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    base_description: str = Field(min_length=1)
+    category: str = Field(min_length=1)
+    base_price: Money
+
+
 class ProductListItem(BaseModel):
     id: uuid.UUID
     sku: str
@@ -111,4 +119,53 @@ def get_product(
         category=product.category,
         base_price=Money(currency=product.price_currency, amount=float(product.base_price_amount)),
     )
+
+
+@router.put("/{product_id}")
+def update_product(
+    product_id: uuid.UUID,
+    body: ProductUpdateRequest,
+    ctx: AuthContext = Depends(require_api_key),
+    db: Session = Depends(get_db),
+) -> ProductDetailResponse:
+    product = db.execute(select(Product).where(Product.id == product_id, Product.user_id == ctx.user_id)).scalar_one_or_none()
+    if not product:
+        raise ApiException(status_code=404, code="not_found", message="Product not found")
+
+    product.sku = body.sku
+    product.name = body.name
+    product.base_description = body.base_description
+    product.category = body.category
+    product.base_price_amount = body.base_price.amount
+    product.price_currency = body.base_price.currency
+
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise ApiException(status_code=409, code="conflict", message="SKU already exists")
+
+    return ProductDetailResponse(
+        id=product.id,
+        sku=product.sku,
+        name=product.name,
+        base_description=product.base_description,
+        category=product.category,
+        base_price=Money(currency=product.price_currency, amount=float(product.base_price_amount)),
+    )
+
+
+@router.delete("/{product_id}", status_code=204)
+def delete_product(
+    product_id: uuid.UUID,
+    ctx: AuthContext = Depends(require_api_key),
+    db: Session = Depends(get_db),
+) -> None:
+    product = db.execute(select(Product).where(Product.id == product_id, Product.user_id == ctx.user_id)).scalar_one_or_none()
+    if not product:
+        raise ApiException(status_code=404, code="not_found", message="Product not found")
+
+    db.delete(product)
+    db.commit()
+    return None
 

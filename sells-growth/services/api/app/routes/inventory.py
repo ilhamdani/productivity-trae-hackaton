@@ -101,3 +101,23 @@ def upsert_inventory(
 
     return InventoryUpsertResponse(location_code=inv.location_code, qty_on_hand=inv.qty_on_hand, qty_reserved=inv.qty_reserved)
 
+
+@router.delete("/{product_id}/inventory/{location_code}", status_code=204)
+def delete_inventory(
+    product_id: uuid.UUID,
+    location_code: str,
+    ctx: AuthContext = Depends(require_api_key),
+    db: Session = Depends(get_db),
+) -> None:
+    _get_owned_product(db, user_id=ctx.user_id, product_id=product_id)
+
+    inv = db.execute(
+        select(Inventory).where(Inventory.product_id == product_id, Inventory.location_code == location_code)
+    ).scalar_one_or_none()
+    if not inv:
+        raise ApiException(status_code=404, code="not_found", message="Inventory not found")
+
+    db.delete(inv)
+    db.commit()
+    return None
+
