@@ -186,40 +186,7 @@ def _run_step(db: Session, *, campaign: Campaign, step: CampaignStep) -> dict[st
             storyboard=step_map["creative_director"].output_json or {},
             video_plan=step_map["video_director"].output_json or {},
         )
-
-        work_dir = os.path.join("/tmp", "aigrowthcopilot", str(campaign.id), str(step.id))
-        os.makedirs(work_dir, exist_ok=True)
-
-        downloaded = render_video_min_duration(
-            prompt=pv.pixverse_prompt,
-            aspect_ratio=pv.video_settings.aspect_ratio,
-            min_duration_sec=pv.video_settings.duration_sec,
-            work_dir=work_dir,
-        )
-
-        settings = get_settings()
-        object_name = f"campaigns/{campaign.id}/videos/{downloaded.video_id}.mp4"
-        upload_file(object_name=object_name, file_path=downloaded.file_path, content_type="video/mp4", settings=settings)
-
-        public_url = f"{settings.public_s3_base_url.rstrip('/')}/{settings.s3_bucket}/{object_name}"
-        asset = CampaignAsset(
-            campaign_id=campaign.id,
-            asset_type="pixverse_video",
-            storage_provider="minio",
-            storage_path=object_name,
-            public_url=public_url,
-            asset_meta={
-                "duration_sec": downloaded.duration_sec,
-                "aspect_ratio": pv.video_settings.aspect_ratio,
-                "source_video_id": downloaded.video_id,
-            },
-        )
-        db.add(asset)
-        db.flush()
-
         data = pv.model_dump(mode="json")
-        data["render_request"] = {"provider": "pixverse", "request_id": downloaded.video_id, "status": "completed"}
-        data["video_asset_url"] = public_url
         return data
 
     if step.step_key == "campaign_manager":
@@ -274,7 +241,7 @@ def run_once() -> None:
                     step=step2,
                     error_code=e.code,
                     error_message=e.message,
-                    retryable=e.code in {"misconfigured", "ai_invalid_json", "ai_schema_mismatch"},
+                    retryable=e.code in {"misconfigured", "ai_invalid_json", "ai_schema_mismatch", "pixverse_error", "pixverse_invalid_json"},
                 )
                 db2.commit()
                 return

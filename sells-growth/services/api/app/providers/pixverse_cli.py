@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from ..errors import ApiException
+from ..settings import get_settings
 
 
 @dataclass(frozen=True)
@@ -18,11 +19,28 @@ class PixverseDownloadedVideo:
 
 
 def _run_json(args: list[str]) -> dict[str, Any]:
+    settings = get_settings()
+    if settings.pixverse_workspace_id:
+        args = [args[0], "--workspace-id", str(settings.pixverse_workspace_id), *args[1:]]
+
     proc = subprocess.run(args, capture_output=True, text=True)
     stdout = (proc.stdout or "").strip()
     stderr = (proc.stderr or "").strip()
     if proc.returncode != 0:
-        raise ApiException(status_code=502, code="pixverse_error", message="PixVerse CLI error", details={"stdout": stdout, "stderr": stderr, "code": proc.returncode})
+        combined = f"{stdout}\n{stderr}".lower()
+        if "not logged in" in combined or "unauthorized" in combined:
+            raise ApiException(
+                status_code=500,
+                code="misconfigured",
+                message="PixVerse CLI is not authenticated. Run `pixverse auth login` inside the api container, then retry the step.",
+                details={"stdout": stdout, "stderr": stderr, "code": proc.returncode},
+            )
+        raise ApiException(
+            status_code=502,
+            code="pixverse_error",
+            message="PixVerse CLI error",
+            details={"stdout": stdout, "stderr": stderr, "code": proc.returncode},
+        )
     if not stdout:
         return {}
     try:
@@ -135,4 +153,3 @@ def render_video_min_duration(
         extends += 1
 
     return PixverseDownloadedVideo(video_id=video_id, file_path=file_path, duration_sec=duration or None)
-

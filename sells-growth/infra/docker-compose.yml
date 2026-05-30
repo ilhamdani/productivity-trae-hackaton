@@ -65,7 +65,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - pixverse_config:/root/.config/pixverse
+      - pixverse_config:/root/.pixverse
 
   web:
     build:

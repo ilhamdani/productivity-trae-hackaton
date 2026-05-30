@@ -16,6 +16,16 @@ const STEP_LABELS: Record<string, string> = {
   campaign_manager: "Campaign Manager",
 };
 
+const STEP_ORDER = [
+  "product_analyst",
+  "marketing_strategist",
+  "copywriter",
+  "creative_director",
+  "video_director",
+  "pixverse",
+  "campaign_manager",
+];
+
 function StepDot({ status }: { status: string }) {
   const cls =
     status === "success"
@@ -35,6 +45,14 @@ function JsonBlock({ data }: { data: unknown }) {
       {text}
     </pre>
   );
+}
+
+function sortSteps(steps: ProgressResponse["steps"]): ProgressResponse["steps"] {
+  const idx = (k: string) => {
+    const i = STEP_ORDER.indexOf(k);
+    return i === -1 ? 999 : i;
+  };
+  return [...steps].sort((a, b) => idx(a.step_key) - idx(b.step_key));
 }
 
 export default function CampaignDetailPage() {
@@ -64,7 +82,11 @@ export default function CampaignDetailPage() {
     try {
       const res = await apiFetch<ProgressResponse>(`/api/v1/campaigns/${id}/progress`);
       setProgress(res);
-      if (res.current_step_key) setSelectedStep((prev) => (prev ? prev : res.current_step_key || "product_analyst"));
+      setSelectedStep((prev) => {
+        if (prev && prev !== "product_analyst") return prev;
+        if (res.campaign_status === "complete") return "campaign_manager";
+        return res.current_step_key || "product_analyst";
+      });
     } catch (e: any) {
       toast.push({ title: "Gagal load progress", detail: e?.message || "Unknown error", tone: "danger" });
     }
@@ -145,6 +167,23 @@ export default function CampaignDetailPage() {
     return asset?.public_url || null;
   }, [campaign]);
 
+  const steps = useMemo(() => sortSteps(progress?.steps || []), [progress?.steps]);
+
+  const campaignPackage = useMemo(() => {
+    if (!stepOutput) return null;
+    const pkg = (stepOutput as any)?.campaign_package;
+    return pkg && typeof pkg === "object" ? (pkg as any) : null;
+  }, [stepOutput]);
+
+  async function copyText(value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.push({ title: "Copied", detail: "Teks sudah disalin.", tone: "success" });
+    } catch (e: any) {
+      toast.push({ title: "Copy gagal", detail: e?.message || "Unknown error", tone: "danger" });
+    }
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-12">
       <div className="lg:col-span-4">
@@ -196,7 +235,7 @@ export default function CampaignDetailPage() {
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <div className="text-sm font-medium text-white/85">Workflow</div>
               <div className="mt-4 space-y-2">
-                {(progress?.steps || []).map((s) => (
+                {steps.map((s) => (
                   <button
                     key={s.step_key}
                     type="button"
@@ -243,14 +282,102 @@ export default function CampaignDetailPage() {
             </div>
           ) : stepOutput ? (
             <div className="grid gap-5">
-              {selectedStep === "pixverse" && videoUrl ? (
-                <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/20">
-                  <video src={videoUrl} controls className="h-[360px] w-full bg-black object-contain" />
-                  <div className="flex items-center justify-between px-4 py-3 text-xs text-white/60">
-                    <div>Video</div>
-                    <a href={videoUrl} target="_blank" className="text-caramel-200 underline underline-offset-4">
-                      Open URL
-                    </a>
+              {selectedStep === "pixverse" ? (
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="text-sm font-medium text-white/85">PixVerse Prompt</div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyText(((stepOutput as any)?.pixverse_prompt as string) || "")}
+                      disabled={!((stepOutput as any)?.pixverse_prompt as string)}
+                    >
+                      Copy prompt
+                    </Button>
+                  </div>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                      <div className="text-[11px] text-white/50">Aspect ratio</div>
+                      <div className="mt-1 text-sm text-white/85">{(stepOutput as any)?.video_settings?.aspect_ratio || "—"}</div>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                      <div className="text-[11px] text-white/50">Duration</div>
+                      <div className="mt-1 text-sm text-white/85">
+                        {(stepOutput as any)?.video_settings?.duration_sec ? `${(stepOutput as any).video_settings.duration_sec}s` : "—"}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                      <div className="text-[11px] text-white/50">Style</div>
+                      <div className="mt-1 text-sm text-white/85">{(stepOutput as any)?.video_settings?.style || "—"}</div>
+                    </div>
+                  </div>
+                  <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+                    <div className="text-[11px] text-white/50">Prompt</div>
+                    <div className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-white/85">
+                      {((stepOutput as any)?.pixverse_prompt as string) || "—"}
+                    </div>
+                  </div>
+                  {videoUrl ? (
+                    <div className="mt-5 overflow-hidden rounded-3xl border border-white/10 bg-black/20">
+                      <video src={videoUrl} controls className="h-[360px] w-full bg-black object-contain" />
+                      <div className="flex items-center justify-between px-4 py-3 text-xs text-white/60">
+                        <div>Video</div>
+                        <a href={videoUrl} target="_blank" className="text-caramel-200 underline underline-offset-4">
+                          Open URL
+                        </a>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-4 rounded-2xl border border-caramel-300/20 bg-caramel-300/10 p-4 text-xs text-white/75">
+                      Video belum tersedia karena flow render video (PixVerse CLI) sedang dimatikan.
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
+              {selectedStep === "campaign_manager" && campaignPackage ? (
+                <div className="grid gap-4">
+                  <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                    <div className="text-sm font-medium text-white/85">Campaign Package</div>
+                    <div className="mt-2 text-sm leading-relaxed text-white/80">{campaignPackage.summary || "—"}</div>
+                  </div>
+
+                  <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                    <div className="text-sm font-medium text-white/85">Publish Checklist</div>
+                    <div className="mt-3 grid gap-2">
+                      {(campaignPackage.publish_checklist || []).map((item: string, i: number) => (
+                        <div key={`${i}-${item}`} className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/80">
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                      <div className="text-sm font-medium text-white/85">Strategy</div>
+                      <div className="mt-3">
+                        <JsonBlock data={campaignPackage.strategy || {}} />
+                      </div>
+                    </div>
+                    <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                      <div className="text-sm font-medium text-white/85">Copy</div>
+                      <div className="mt-3">
+                        <JsonBlock data={campaignPackage.copy || {}} />
+                      </div>
+                    </div>
+                    <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                      <div className="text-sm font-medium text-white/85">Creative / Storyboard</div>
+                      <div className="mt-3">
+                        <JsonBlock data={campaignPackage.creative || {}} />
+                      </div>
+                    </div>
+                    <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                      <div className="text-sm font-medium text-white/85">Video Plan</div>
+                      <div className="mt-3">
+                        <JsonBlock data={campaignPackage.video || {}} />
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : null}
