@@ -39,8 +39,8 @@
   - simpan video hasil ke storage
 
 **Penyimpanan**
-- Supabase Postgres: campaign + step output
-- Supabase Storage: foto produk + video hasil
+- PostgreSQL: campaign + step output
+- MinIO (S3 Object Storage): foto produk + video hasil
 
 ---
 
@@ -619,7 +619,7 @@ Catatan: schema di bawah memakai gaya JSON Schema Draft 2020-12. Semua field `ad
     },
     "video": {
       "pixverse_prompt": "Vertical 9:16 premium coffee ad video...",
-      "video_asset_url": "https://storage.supabase.co/.../video.mp4",
+      "video_asset_url": "https://minio.local.example/bucket/campaigns/.../video.mp4",
       "duration_sec": 30,
       "aspect_ratio": "9:16"
     },
