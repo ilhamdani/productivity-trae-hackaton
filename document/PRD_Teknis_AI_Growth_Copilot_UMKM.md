@@ -3,6 +3,7 @@
 ## 1) Ruang Lingkup MVP
 **Input**
 - Product: `name, description, price, category, 1-5 images`
+- Inventory (opsional): pilih produk dari database dengan `product_id/SKU` untuk autofill data produk + konteks stok
 - Opsional: `brand_tone, target_location, primary_goal`
 
 **Output (Campaign Package)**
@@ -45,8 +46,18 @@
 ---
 
 ## 3) Data Model Minimum (DB)
+**products**
+- `id, user_id, sku, name, base_description, category, base_price_amount, price_currency`
+
+**inventory**
+- `id, product_id, location_code, qty_on_hand, qty_reserved, updated_at`
+
+**campaign_product_snapshots**
+- Snapshot data produk + stok pada saat generate (read-only untuk workflow AI)
+- `id, campaign_id, product_id, snapshot_json(jsonb), created_at`
+
 **campaigns**
-- `id, user_id, product_name, product_description, price, category, product_image_urls(jsonb)`
+- `id, user_id, product_id(nullable), product_snapshot_id(nullable), product_name, product_description, price, category, product_image_urls(jsonb)`
 - `status(draft|running|complete|failed)`, `created_at, updated_at`
 
 **campaign_steps**
@@ -59,7 +70,7 @@
 
 ---
 
-## 4) Kontrak Orchestrator (API/Server Actions)
+## 4) Kontrak Orchestrator (Backend API)
 ### 4.1 Request: Start Generation
 ```json
 {
@@ -72,6 +83,10 @@
   }
 }
 ```
+
+Catatan:
+- Saat generate dimulai, backend membuat `campaign_product_snapshot` dari `products + inventory` (jika campaign memakai `product_id`).
+- Workflow AI hanya membaca snapshot tersebut agar data inventory tidak tercampur dengan output AI dan tidak berubah saat stok real-time berubah.
 
 ### 4.2 Response: Progress Snapshot
 ```json

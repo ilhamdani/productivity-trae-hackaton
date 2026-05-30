@@ -1,0 +1,82 @@
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-aigrowthcopilot}
+      POSTGRES_USER: ${POSTGRES_USER:-aigrowthcopilot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aigrowthcopilot}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  storage:
+    image: minio/minio:RELEASE.2025-01-20T14-49-07Z
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+
+  minio-init:
+    image: minio/mc:RELEASE.2025-01-17T23-25-50Z
+    depends_on:
+      - storage
+    entrypoint: ["/bin/sh", "/init/init.sh"]
+    environment:
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://storage:9000}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
+      S3_BUCKET: ${S3_BUCKET:-aigrowthcopilot}
+    volumes:
+      - ./minio-init:/init:ro
+
+  api:
+    build:
+      context: ../services/api
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+      - minio-init
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://aigrowthcopilot:aigrowthcopilot@db:5432/aigrowthcopilot}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://storage:9000}
+      PUBLIC_S3_BASE_URL: ${PUBLIC_S3_BASE_URL:-http://localhost:9000}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
+      S3_BUCKET: ${S3_BUCKET:-aigrowthcopilot}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      PIXVERSE_WORKSPACE_ID: ${PIXVERSE_WORKSPACE_ID:-}
+      API_KEY_SALT: ${API_KEY_SALT:-devsalt}
+      SEED_DEMO: ${SEED_DEMO:-true}
+      DEMO_API_KEY: ${DEMO_API_KEY:-dev}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      PROGRESS_POLL_MS: ${PROGRESS_POLL_MS:-1500}
+      PIXVERSE_POLL_SEC: ${PIXVERSE_POLL_SEC:-8}
+    ports:
+      - "8000:8000"
+    volumes:
+      - pixverse_config:/root/.config/pixverse
+
+  web:
+    build:
+      context: ../apps/web
+      dockerfile: Dockerfile
+    depends_on:
+      - api
+    ports:
+      - "5173:5173"
+
+volumes:
+  db_data:
+  minio_data:
+  pixverse_config:

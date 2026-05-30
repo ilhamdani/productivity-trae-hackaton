@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: theme("fontFamily.sans");
+  background: radial-gradient(1200px 600px at 15% 10%, rgba(255, 184, 79, 0.22), transparent 60%),
+    radial-gradient(900px 500px at 90% 20%, rgba(81, 233, 194, 0.16), transparent 55%),
+    radial-gradient(700px 520px at 40% 90%, rgba(243, 125, 0, 0.10), transparent 60%),
+    linear-gradient(180deg, #0d0907 0%, #090606 100%);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.noise {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.08;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+}
+

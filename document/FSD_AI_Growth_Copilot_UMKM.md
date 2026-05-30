@@ -5,7 +5,7 @@ Dokumen ini mendefinisikan spesifikasi fungsional MVP “AI Growth Copilot” se
 
 Dokumen ini mencakup:
 - Ruang lingkup fitur MVP dan perilaku sistem
-- Arsitektur solusi dan tech stack: Java Spring Boot, PostgreSQL, Electron, Docker
+- Arsitektur solusi dan tech stack: Python (FastAPI), PostgreSQL, Electron, Docker
 - Spesifikasi API (kontrak request/response) dan status workflow
 - Skema database (PostgreSQL) dan aturan akses
 - Mockup desain (wireframe) untuk halaman utama MVP
@@ -30,11 +30,11 @@ Dokumen ini mencakup:
 - Tailwind CSS + shadcn/ui
 
 **Backend**
-- Java 21
-- Spring Boot 3.x
-- Spring Web (REST), Spring Validation
-- Spring Security (JWT)
-- OpenAPI/Swagger (springdoc)
+- Python 3.12+
+- FastAPI (REST) + Pydantic (validation)
+- Uvicorn (ASGI server)
+- JWT auth (FastAPI dependency/middleware)
+- OpenAPI/Swagger (built-in FastAPI)
 
 **Database**
 - PostgreSQL 15+
@@ -50,7 +50,7 @@ Dokumen ini mencakup:
 ### 3.2 Arsitektur Layanan (MVP)
 Komponen utama:
 - Electron Desktop App: UI create campaign, progress workflow, dashboard hasil.
-- Spring Boot API: autentikasi, CRUD campaign, orkestrasi workflow, integrasi provider AI & PixVerse, penyimpanan output.
+- Python API (FastAPI): autentikasi, CRUD campaign, orkestrasi workflow, integrasi provider AI & PixVerse, penyimpanan output.
 - PostgreSQL: persist campaign, step, output, asset metadata.
 - MinIO (S3 Object Storage): untuk gambar produk dan video.
 
@@ -60,7 +60,7 @@ Desktop App (Electron)
    |
    | HTTPS (JWT)
    v
-Spring Boot API  -----> OpenAI API
+Python API (FastAPI)  -----> OpenAI API
    |     |
    |     +-----> PixVerse API (create + poll)
    |
@@ -93,12 +93,16 @@ Spring Boot API  -----> OpenAI API
 ### 5.1 Happy Path
 1. User login.
 2. User klik “New Campaign”.
-3. User isi form produk + upload foto.
-4. User klik “Generate Campaign”.
-5. Sistem menjalankan workflow multi-agent step-by-step sambil memperbarui status.
-6. Sistem menghasilkan video via PixVerse.
-7. Sistem menyusun campaign package.
-8. User melihat dashboard hasil + copy caption/prompt + download video.
+3. User memilih sumber data produk:
+   - Opsi A: pilih produk dari Inventory (autofill data + konteks stok), atau
+   - Opsi B: isi form produk manual.
+4. User upload foto produk (jika belum ada).
+5. User klik “Generate Campaign”.
+6. Sistem membuat snapshot produk+stok (read-only) untuk campaign.
+7. Sistem menjalankan workflow multi-agent step-by-step sambil memperbarui status.
+8. Sistem menghasilkan video via PixVerse.
+9. Sistem menyusun campaign package.
+10. User melihat dashboard hasil + copy caption/prompt + download video.
 
 ### 5.2 Error Path (contoh)
 - OpenAI step gagal (timeout/rate limit): step menjadi `failed`, UI menampilkan alasan ringkas + tombol `Retry Step`.
@@ -111,7 +115,7 @@ Spring Boot API  -----> OpenAI API
 ### FR-01 Autentikasi
 **Deskripsi**
 - User login menggunakan provider autentikasi (MVP: JWT). Strategi integrasi:
-  - Opsi A: Spring Boot issue JWT sendiri (email/password sederhana)
+  - Opsi A: Backend issue JWT sendiri (email/password sederhana)
   - Opsi B: Integrasi dengan external IdP (JWT verification)
 
 **Acceptance**
@@ -169,6 +173,19 @@ Workflow step keys (MVP):
 **Acceptance**
 - Setelah complete, semua section bisa diakses.
 
+### FR-07 Product Catalog & Inventory (Data Only)
+**Deskripsi**
+- Sistem menyimpan master data produk dan stok sebagai data operasional (non-AI).
+- Campaign dapat memilih `product_id` untuk autofill data produk dan mengambil konteks stok.
+- Saat generate dimulai, backend membuat `campaign_product_snapshot` (copy JSON) dari product + inventory supaya:
+  - AI hanya membaca snapshot (tidak baca tabel inventory langsung).
+  - Output AI tidak bercampur dengan data inventory.
+  - Hasil campaign stabil walau stok berubah setelah generate.
+
+**Acceptance**
+- CRUD produk dan inventory tidak mengubah output campaign yang sudah berjalan/selesai.
+- Snapshot dibuat sekali per generate dan direferensikan oleh campaign.
+
 ---
 
 ## 7) Non-Functional Requirements (NFR)
@@ -201,12 +218,34 @@ Workflow step keys (MVP):
 
 ### 8.2 Tables (MVP)
 #### `users`
-Opsional, bergantung strategi autentikasi. Jika Spring Boot issue JWT sendiri, tabel ini dibutuhkan.
+Opsional, bergantung strategi autentikasi. Jika backend issue JWT sendiri, tabel ini dibutuhkan.
+
+#### `products`
+- `id` uuid pk
+- `user_id` uuid (atau text jika dari external auth)
+- `sku` text unique per user
+- `name` text
+- `base_description` text
+- `category` text
+- `base_price_amount` numeric
+- `price_currency` text default 'IDR'
+- `created_at`, `updated_at` timestamptz
+
+#### `inventory`
+- `id` uuid pk
+- `product_id` uuid fk
+- `location_code` text
+- `qty_on_hand` int
+- `qty_reserved` int default 0
+- `updated_at` timestamptz
+- unique constraint: `(product_id, location_code)`
 
 #### `campaigns`
 Kolom minimum:
 - `id` uuid pk
 - `user_id` uuid (atau text jika dari external auth)
+- `product_id` uuid null
+- `product_snapshot_id` uuid null
 - `product_name` text
 - `product_description` text
 - `price_amount` numeric
@@ -217,6 +256,14 @@ Kolom minimum:
 - `primary_goal` text null
 - `status` text
 - `created_at`, `updated_at` timestamptz
+
+#### `campaign_product_snapshots`
+- `id` uuid pk
+- `campaign_id` uuid fk
+- `product_id` uuid fk null
+- `snapshot_json` jsonb
+- `created_at` timestamptz
+- unique constraint: `(campaign_id)`
 
 #### `campaign_steps`
 - `id` uuid pk
@@ -244,7 +291,7 @@ Kolom minimum:
 
 ---
 
-## 9) API Specification (Spring Boot REST)
+## 9) API Specification (FastAPI REST)
 
 ### 9.1 Auth
 Header:
@@ -281,6 +328,7 @@ Response:
 Request:
 ```json
 {
+  "product_id": "uuid (optional)",
   "product_name": "Iced Caramel Latte",
   "product_description": "Kopi premium dengan sirup caramel dan susu segar.",
   "price": { "currency": "IDR", "amount": 25000 },
@@ -294,6 +342,9 @@ Response:
 ```json
 { "id": "uuid", "status": "draft" }
 ```
+
+Catatan:
+- Jika `product_id` diisi, field product_* dapat di-autofill oleh backend dari `products` (boleh tetap dikirim untuk override draft).
 
 #### GET `/api/v1/campaigns/{campaignId}`
 Response:
@@ -314,7 +365,7 @@ Response:
 ### 9.3 Upload Asset
 #### POST `/api/v1/campaigns/{campaignId}/assets/product-images`
 MVP opsi:
-- multipart upload langsung ke Spring Boot (kemudian forward ke storage), atau
+- multipart upload langsung ke backend (kemudian forward ke storage), atau
 - signed URL dari storage (lebih ideal)
 
 Response:
@@ -326,7 +377,68 @@ Response:
 }
 ```
 
-### 9.4 Start Workflow
+### 9.4 Product Catalog
+#### GET `/api/v1/products`
+Response:
+```json
+{
+  "items": [
+    { "id": "uuid", "sku": "SKU-001", "name": "Iced Caramel Latte", "category": "Coffee" }
+  ]
+}
+```
+
+#### POST `/api/v1/products`
+Request:
+```json
+{
+  "sku": "SKU-001",
+  "name": "Iced Caramel Latte",
+  "base_description": "Kopi premium…",
+  "category": "Coffee",
+  "base_price": { "currency": "IDR", "amount": 25000 }
+}
+```
+Response:
+```json
+{ "id": "uuid" }
+```
+
+#### GET `/api/v1/products/{productId}`
+Response:
+```json
+{
+  "id": "uuid",
+  "sku": "SKU-001",
+  "name": "Iced Caramel Latte",
+  "base_description": "Kopi premium…",
+  "category": "Coffee",
+  "base_price": { "currency": "IDR", "amount": 25000 }
+}
+```
+
+### 9.5 Inventory
+#### GET `/api/v1/products/{productId}/inventory`
+Response:
+```json
+{
+  "items": [
+    { "location_code": "MAIN", "qty_on_hand": 120, "qty_reserved": 10, "updated_at": "2026-05-30T00:00:00Z" }
+  ]
+}
+```
+
+#### PUT `/api/v1/products/{productId}/inventory/{locationCode}`
+Request:
+```json
+{ "qty_on_hand": 120, "qty_reserved": 10 }
+```
+Response:
+```json
+{ "location_code": "MAIN", "qty_on_hand": 120, "qty_reserved": 10 }
+```
+
+### 9.6 Start Workflow
 #### POST `/api/v1/campaigns/{campaignId}/generate`
 Response:
 ```json
@@ -337,7 +449,7 @@ Response:
 }
 ```
 
-### 9.5 Progress
+### 9.7 Progress
 #### GET `/api/v1/campaigns/{campaignId}/progress`
 Response:
 ```json
@@ -358,7 +470,7 @@ Response:
 }
 ```
 
-### 9.6 Step Output (untuk dashboard)
+### 9.8 Step Output (untuk dashboard)
 #### GET `/api/v1/campaigns/{campaignId}/steps/{stepKey}`
 Response:
 ```json
@@ -369,7 +481,7 @@ Response:
 }
 ```
 
-### 9.7 Retry Step
+### 9.9 Retry Step
 #### POST `/api/v1/campaigns/{campaignId}/steps/{stepKey}/retry`
 Response:
 ```json
@@ -496,7 +608,7 @@ Timeout guideline:
 ## 12) Docker (Dev) — Layout Rekomendasi
 Electron Desktop App berjalan di host machine (bukan container). Docker Compose dipakai untuk menjalankan dependency backend (API, DB, object storage).
 Struktur service (docker compose):
-- `api` (Spring Boot)
+- `api` (Python FastAPI)
 - `db` (PostgreSQL)
 - `storage` (MinIO untuk S3 object storage)
 
