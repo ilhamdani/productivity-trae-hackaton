@@ -25,6 +25,12 @@ export default function SettingsPage() {
     }
   }
 
+  function logout() {
+    setApiKey("");
+    toast.push({ title: "Logout", tone: "success" });
+    nav("/login");
+  }
+
   function save() {
     setApiBaseUrl(apiBaseUrl);
     setApiKey(apiKey);
@@ -58,6 +64,11 @@ export default function SettingsPage() {
             <Button variant="ghost" onClick={testConnection}>
               Test Connection
             </Button>
+            {apiKey ? (
+              <Button variant="danger" onClick={logout}>
+                Logout
+              </Button>
+            ) : null}
             <Button onClick={save}>Save</Button>
           </div>
         </div>

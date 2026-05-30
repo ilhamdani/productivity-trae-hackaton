@@ -1,16 +1,21 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { getApiKey } from "./api/storage";
 import AppShell from "./components/AppShell";
 import CampaignDetailPage from "./pages/CampaignDetailPage";
 import CampaignListPage from "./pages/CampaignListPage";
 import InventoryPage from "./pages/InventoryPage";
+import LoginPage from "./pages/LoginPage";
 import MasterProductPage from "./pages/MasterProductPage";
 import NewCampaignPage from "./pages/NewCampaignPage";
 import SettingsPage from "./pages/SettingsPage";
 
-function RequireApiKey() {
+function RequireAuth() {
+  const location = useLocation();
   const key = getApiKey();
-  if (!key) return <Navigate to="/settings" replace />;
+  if (!key) {
+    const next = encodeURIComponent(`${location.pathname}${location.search}`);
+    return <Navigate to={`/login?next=${next}`} replace />;
+  }
   return <AppShell />;
 }
 
@@ -20,8 +25,9 @@ export default function App() {
       <div className="noise" />
       <Routes>
         <Route path="/" element={<Navigate to="/campaigns" replace />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/settings" element={<SettingsPage />} />
-        <Route element={<RequireApiKey />}>
+        <Route element={<RequireAuth />}>
           <Route path="/campaigns" element={<CampaignListPage />} />
           <Route path="/campaigns/new" element={<NewCampaignPage />} />
           <Route path="/campaigns/:campaignId" element={<CampaignDetailPage />} />

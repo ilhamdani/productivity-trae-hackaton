@@ -14,6 +14,7 @@ from .db.engine import SessionLocal
 from .db.models import ApiKey, Campaign, CampaignAsset, Inventory, Product, User
 from .errors import install_error_handlers
 from .routes.assets import router as assets_router
+from .routes.auth import router as auth_router
 from .routes.campaigns import router as campaigns_router
 from .routes.health import router as health_router
 from .routes.inventory import router as inventory_router
@@ -41,6 +42,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(health_router)
+    app.include_router(auth_router)
 
     api_v1 = APIRouter(prefix="/api/v1", dependencies=[Depends(require_api_key)])
     api_v1.include_router(me_router)
