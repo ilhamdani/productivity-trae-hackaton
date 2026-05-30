@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -155,17 +155,17 @@ def update_product(
     )
 
 
-@router.delete("/{product_id}", status_code=204)
+@router.delete("/{product_id}", status_code=204, response_class=Response)
 def delete_product(
     product_id: uuid.UUID,
     ctx: AuthContext = Depends(require_api_key),
     db: Session = Depends(get_db),
-) -> None:
+) -> Response:
     product = db.execute(select(Product).where(Product.id == product_id, Product.user_id == ctx.user_id)).scalar_one_or_none()
     if not product:
         raise ApiException(status_code=404, code="not_found", message="Product not found")
 
     db.delete(product)
     db.commit()
-    return None
+    return Response(status_code=204)
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -102,13 +102,13 @@ def upsert_inventory(
     return InventoryUpsertResponse(location_code=inv.location_code, qty_on_hand=inv.qty_on_hand, qty_reserved=inv.qty_reserved)
 
 
-@router.delete("/{product_id}/inventory/{location_code}", status_code=204)
+@router.delete("/{product_id}/inventory/{location_code}", status_code=204, response_class=Response)
 def delete_inventory(
     product_id: uuid.UUID,
     location_code: str,
     ctx: AuthContext = Depends(require_api_key),
     db: Session = Depends(get_db),
-) -> None:
+) -> Response:
     _get_owned_product(db, user_id=ctx.user_id, product_id=product_id)
 
     inv = db.execute(
@@ -119,5 +119,5 @@ def delete_inventory(
 
     db.delete(inv)
     db.commit()
-    return None
+    return Response(status_code=204)
 
