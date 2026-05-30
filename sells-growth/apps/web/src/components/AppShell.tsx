@@ -20,6 +20,8 @@ export default function AppShell() {
       ? "New Campaign"
       : location.pathname.startsWith("/campaigns/")
         ? "Campaign"
+        : location.pathname.startsWith("/master-product")
+          ? "Master Product"
         : "Campaigns";
 
   return (
@@ -57,6 +59,17 @@ export default function AppShell() {
                 }
               >
                 New Campaign
+              </NavLink>
+              <NavLink
+                to="/master-product"
+                className={({ isActive }) =>
+                  [
+                    "rounded-2xl px-4 py-3 text-sm transition",
+                    isActive ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/7 hover:text-white",
+                  ].join(" ")
+                }
+              >
+                Master Product
               </NavLink>
               <NavLink
                 to="/settings"

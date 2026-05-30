@@ -3,6 +3,7 @@ import { getApiKey } from "./api/storage";
 import AppShell from "./components/AppShell";
 import CampaignDetailPage from "./pages/CampaignDetailPage";
 import CampaignListPage from "./pages/CampaignListPage";
+import MasterProductPage from "./pages/MasterProductPage";
 import NewCampaignPage from "./pages/NewCampaignPage";
 import SettingsPage from "./pages/SettingsPage";
 
@@ -23,6 +24,7 @@ export default function App() {
           <Route path="/campaigns" element={<CampaignListPage />} />
           <Route path="/campaigns/new" element={<NewCampaignPage />} />
           <Route path="/campaigns/:campaignId" element={<CampaignDetailPage />} />
+          <Route path="/master-product" element={<MasterProductPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/campaigns" replace />} />
       </Routes>
