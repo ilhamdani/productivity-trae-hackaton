@@ -67,7 +67,7 @@ def _require_ready_images(db: Session, *, campaign_id: uuid.UUID) -> None:
     assets = db.execute(
         select(CampaignAsset).where(CampaignAsset.campaign_id == campaign_id, CampaignAsset.asset_type == "product_image")
     ).scalars().all()
-    ready = [a for a in assets if (a.asset_meta or {}).get("status") == "ready" and a.public_url]
+    ready = [a for a in assets if a.public_url]
     if not ready:
         raise ApiException(status_code=422, code="validation_error", message="At least 1 product image is required")
 

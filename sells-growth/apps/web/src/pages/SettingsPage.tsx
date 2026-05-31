@@ -51,14 +51,14 @@ export default function SettingsPage() {
       >
         <div className="grid gap-4">
           <div>
-            <div className="mb-2 text-sm text-white/70">API Base URL</div>
+            <div className="mb-2 text-sm text-slate-700">API Base URL</div>
             <Input value={apiBaseUrl} onChange={(e) => setApiBaseUrlState(e.target.value)} placeholder="http://localhost:8000" />
-            <div className="mt-2 text-xs text-white/45">Endpoint contoh: http://localhost:8000</div>
+            <div className="mt-2 text-xs text-slate-500">Endpoint contoh: http://localhost:8000</div>
           </div>
           <div>
-            <div className="mb-2 text-sm text-white/70">X-API-Key</div>
+            <div className="mb-2 text-sm text-slate-700">X-API-Key</div>
             <Input value={apiKey} onChange={(e) => setApiKeyState(e.target.value)} placeholder="dev" />
-            <div className="mt-2 text-xs text-white/45">Preview: {keyPreview}</div>
+            <div className="mt-2 text-xs text-slate-500">Preview: {keyPreview}</div>
           </div>
           <div className="flex flex-wrap gap-3 pt-2">
             <Button variant="ghost" onClick={testConnection}>

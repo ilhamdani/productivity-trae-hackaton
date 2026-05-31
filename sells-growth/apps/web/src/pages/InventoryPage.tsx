@@ -126,7 +126,7 @@ export default function InventoryPage() {
   }, [selectedProductId]);
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4">
       <Card
         title="Inventory"
         subtitle="Pantau dan atur stok per lokasi untuk setiap produk."
@@ -147,18 +147,18 @@ export default function InventoryPage() {
         }
       >
         {loadingProducts ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/60">
+          <div className="border border-slate-200/70 bg-slate-50 px-4 py-10 text-center text-sm text-slate-600">
             Loading…
           </div>
         ) : products.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center">
+          <div className="border border-slate-200/70 bg-slate-50 px-4 py-10 text-center">
             <div className="font-display text-xl">Belum ada produk</div>
-            <div className="mt-2 text-sm text-white/55">Buat produk dulu di Master Product, lalu kembali ke sini.</div>
+            <div className="mt-2 text-sm text-slate-600">Buat produk dulu di Master Product, lalu kembali ke sini.</div>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-12">
             <div className="md:col-span-5 lg:col-span-4">
-              <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/6 to-white/3 p-4 shadow-card">
+              <div className="border border-slate-200/70 bg-white p-3 shadow-card">
                 <Input
                   value={productQuery}
                   onChange={(e) => setProductQuery(e.target.value)}
@@ -173,18 +173,18 @@ export default function InventoryPage() {
                         key={p.id}
                         onClick={() => setSelectedProductId(p.id)}
                         className={[
-                          "rounded-3xl border px-4 py-3 text-left transition",
+                          "border px-3 py-2 text-left transition",
                           active
-                            ? "border-caramel-300/30 bg-white/10"
-                            : "border-white/10 bg-white/5 hover:border-white/16 hover:bg-white/7",
+                            ? "border-leaf-200 bg-leaf-50"
+                            : "border-slate-200/70 bg-white hover:border-slate-300 hover:bg-slate-50",
                         ].join(" ")}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <div className="font-display text-base leading-snug tracking-tight">{p.name}</div>
-                            <div className="mt-1 text-xs text-white/50">{p.sku}</div>
+                            <div className="font-display text-base leading-snug tracking-tight text-slate-900">{p.name}</div>
+                            <div className="mt-1 text-xs text-slate-500">{p.sku}</div>
                           </div>
-                          <div className="inline-flex rounded-full border border-white/12 bg-white/5 px-3 py-1 text-xs font-medium text-white/70">
+                          <div className="inline-flex border border-slate-200/70 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
                             {p.category}
                           </div>
                         </div>
@@ -196,22 +196,22 @@ export default function InventoryPage() {
             </div>
 
             <div className="md:col-span-7 lg:col-span-8">
-              <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/6 to-white/3 p-4 shadow-card">
+              <div className="border border-slate-200/70 bg-white p-3 shadow-card">
                 {selectedProduct ? (
                   <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
-                      <div className="font-display text-xl leading-tight tracking-tight">{selectedProduct.name}</div>
-                      <div className="mt-1 text-xs text-white/55">
-                        <span className="text-white/70">{selectedProduct.sku}</span> ·{" "}
-                        <span className="text-white/55">{selectedProduct.category}</span>
+                      <div className="font-display text-xl leading-tight tracking-tight text-slate-900">{selectedProduct.name}</div>
+                      <div className="mt-1 text-xs text-slate-600">
+                        <span className="text-slate-700">{selectedProduct.sku}</span> ·{" "}
+                        <span className="text-slate-500">{selectedProduct.category}</span>
                       </div>
                     </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/65">
+                    <div className="border border-slate-200/70 bg-slate-50 px-3 py-2 text-xs text-slate-700">
                       Stok: per lokasi
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/60">
+                  <div className="border border-slate-200/70 bg-slate-50 px-4 py-10 text-center text-sm text-slate-600">
                     Pilih produk untuk lihat stok.
                   </div>
                 )}
@@ -219,13 +219,13 @@ export default function InventoryPage() {
                 {selectedProduct ? (
                   <div className="mt-4 grid gap-3">
                     {loadingInventory ? (
-                      <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/60">
+                      <div className="border border-slate-200/70 bg-slate-50 px-4 py-10 text-center text-sm text-slate-600">
                         Loading…
                       </div>
                     ) : inventory.length === 0 ? (
-                      <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center">
+                      <div className="border border-slate-200/70 bg-slate-50 px-4 py-10 text-center">
                         <div className="font-display text-xl">Belum ada stok</div>
-                        <div className="mt-2 text-sm text-white/55">Tambahkan lokasi gudang/toko untuk mulai tracking.</div>
+                        <div className="mt-2 text-sm text-slate-600">Tambahkan lokasi gudang/toko untuk mulai tracking.</div>
                       </div>
                     ) : (
                       <div className="grid gap-2">
@@ -236,23 +236,23 @@ export default function InventoryPage() {
                           return (
                             <div
                               key={it.location_code}
-                              className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3"
+                              className="border border-slate-200/70 bg-slate-50 px-3 py-2"
                             >
                               <div className="flex flex-wrap items-center justify-between gap-3">
                                 <div>
-                                  <div className="font-medium text-white/90">{it.location_code}</div>
-                                  <div className="mt-1 text-xs text-white/50">
+                                  <div className="font-medium text-slate-900">{it.location_code}</div>
+                                  <div className="mt-1 text-xs text-slate-500">
                                     Update: {new Date(it.updated_at).toLocaleString()}
                                   </div>
                                 </div>
-                                <div className="inline-flex rounded-full border border-mint-300/25 bg-mint-300/10 px-3 py-1 text-xs font-medium text-mint-100">
+                                <div className="inline-flex border border-leaf-200 bg-leaf-50 px-3 py-1 text-xs font-medium text-leaf-800">
                                   Available: {available}
                                 </div>
                               </div>
 
                               <div className="mt-3 grid gap-3 md:grid-cols-12 md:items-end">
                                 <div className="md:col-span-4">
-                                  <div className="text-xs text-white/55">On hand</div>
+                                  <div className="text-xs text-slate-600">On hand</div>
                                   <Input
                                     type="number"
                                     min={0}
@@ -270,7 +270,7 @@ export default function InventoryPage() {
                                   />
                                 </div>
                                 <div className="md:col-span-4">
-                                  <div className="text-xs text-white/55">Reserved</div>
+                                  <div className="text-xs text-slate-600">Reserved</div>
                                   <Input
                                     type="number"
                                     min={0}
@@ -323,16 +323,16 @@ export default function InventoryPage() {
                       </div>
                     )}
 
-                    <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/6 to-white/3 p-4">
+                    <div className="border border-slate-200/70 bg-white p-3 shadow-card">
                       <div className="font-display text-lg tracking-tight">Tambah lokasi</div>
-                      <div className="mt-1 text-sm text-white/55">Contoh: TOKO-01, GUDANG-A, SHOPEE-FBM.</div>
+                      <div className="mt-1 text-sm text-slate-600">Contoh: TOKO-01, GUDANG-A, SHOPEE-FBM.</div>
                       <div className="mt-4 grid gap-3 md:grid-cols-12 md:items-end">
                         <div className="md:col-span-4">
-                          <div className="text-xs text-white/55">Kode lokasi</div>
+                          <div className="text-xs text-slate-600">Kode lokasi</div>
                           <Input value={newLocation} onChange={(e) => setNewLocation(e.target.value)} className="mt-2 py-2" />
                         </div>
                         <div className="md:col-span-3">
-                          <div className="text-xs text-white/55">On hand</div>
+                          <div className="text-xs text-slate-600">On hand</div>
                           <Input
                             type="number"
                             min={0}
@@ -342,7 +342,7 @@ export default function InventoryPage() {
                           />
                         </div>
                         <div className="md:col-span-3">
-                          <div className="text-xs text-white/55">Reserved</div>
+                          <div className="text-xs text-slate-600">Reserved</div>
                           <Input
                             type="number"
                             min={0}

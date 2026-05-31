@@ -136,10 +136,14 @@ def render_video_min_duration(
     work_dir: str,
     quality: str = "1080p",
     model: str = "v6",
-    max_extends: int = 3,
+    max_extends: int = 0,
 ) -> PixverseDownloadedVideo:
-    base_duration = min(15, max(1, min_duration_sec))
-    video_id = create_video(prompt=prompt, aspect_ratio=aspect_ratio, quality=quality, model=model, duration_sec=base_duration)
+    desired_duration = max(1, min_duration_sec)
+    try:
+        video_id = create_video(prompt=prompt, aspect_ratio=aspect_ratio, quality=quality, model=model, duration_sec=desired_duration)
+    except ApiException:
+        fallback_duration = min(15, desired_duration)
+        video_id = create_video(prompt=prompt, aspect_ratio=aspect_ratio, quality=quality, model=model, duration_sec=fallback_duration)
     wait_video(video_id=video_id)
     file_path = download_video(video_id=video_id, dest_dir=os.path.join(work_dir, "downloads"))
     duration = probe_duration_sec(file_path=file_path) or 0.0

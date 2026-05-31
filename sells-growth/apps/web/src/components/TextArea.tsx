@@ -8,11 +8,10 @@ export default function TextArea({
     <textarea
       {...props}
       className={[
-        "w-full resize-none rounded-2xl border border-white/12 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/35",
-        "focus:border-caramel-300/50 focus:outline-none focus:ring-2 focus:ring-caramel-300/25",
+        "w-full resize-none rounded-none border border-slate-200/80 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm",
+        "focus:border-leaf-300 focus:outline-none focus:ring-2 focus:ring-leaf-200/70",
         className,
       ].join(" ")}
     />
   );
 }
-

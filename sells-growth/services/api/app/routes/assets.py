@@ -154,7 +154,7 @@ def upload_product_images(
 
             upload_file(object_name=storage_path, file_path=tmp_path, content_type=content_type)
 
-            meta = asset.asset_meta or {}
+            meta = dict(asset.asset_meta or {})
             meta["status"] = "ready"
             asset.asset_meta = meta
             asset.public_url = f"{base}/{bucket}/{asset.storage_path}"
@@ -196,7 +196,7 @@ def commit_product_images(
     bucket = settings.s3_bucket
 
     for asset in assets:
-        meta = asset.asset_meta or {}
+        meta = dict(asset.asset_meta or {})
         meta["status"] = "ready"
         asset.asset_meta = meta
         asset.public_url = f"{base}/{bucket}/{asset.storage_path}"

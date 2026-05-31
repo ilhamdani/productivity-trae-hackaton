@@ -180,7 +180,7 @@ export default function MasterProductPage() {
   }, []);
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4">
       <Card
         title="Master Product"
         subtitle="CRUD produk yang dipakai saat bikin campaign."
@@ -196,18 +196,13 @@ export default function MasterProductPage() {
         }
       >
         {loadingList ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/60">
+          <div className="border border-slate-200/70 bg-slate-50 px-4 py-10 text-center text-sm text-slate-600">
             Loading…
-          </div>
-        ) : items.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center">
-            <div className="font-display text-xl">Catalog kosong</div>
-            <div className="mt-2 text-sm text-white/55">Klik New untuk membuat produk pertama.</div>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-12">
             <div className="md:col-span-5 lg:col-span-4">
-              <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/6 to-white/3 p-4 shadow-card">
+              <div className="border border-slate-200/70 bg-white p-3 shadow-card">
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -215,43 +210,49 @@ export default function MasterProductPage() {
                   className="py-2"
                 />
                 <div className="mt-3 grid max-h-[520px] gap-2 overflow-auto pr-1">
-                  {filteredItems.map((p) => {
-                    const active = p.id === selectedId && mode === "edit";
-                    return (
-                      <button
-                        key={p.id}
-                        onClick={() => startEdit(p.id)}
-                        className={[
-                          "rounded-3xl border px-4 py-3 text-left transition",
-                          active
-                            ? "border-caramel-300/30 bg-white/10"
-                            : "border-white/10 bg-white/5 hover:border-white/16 hover:bg-white/7",
-                        ].join(" ")}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="font-display text-base leading-snug tracking-tight">{p.name}</div>
-                            <div className="mt-1 text-xs text-white/50">{p.sku}</div>
+                  {filteredItems.length === 0 ? (
+                    <div className="border border-slate-200/70 bg-slate-50 px-3 py-3 text-sm text-slate-600">
+                      Catalog kosong. Buat produk pertama di panel kanan.
+                    </div>
+                  ) : (
+                    filteredItems.map((p) => {
+                      const active = p.id === selectedId && mode === "edit";
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => startEdit(p.id)}
+                          className={[
+                            "border px-3 py-2 text-left transition",
+                            active
+                              ? "border-leaf-200 bg-leaf-50"
+                              : "border-slate-200/70 bg-white hover:border-slate-300 hover:bg-slate-50",
+                          ].join(" ")}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="font-display text-base leading-snug tracking-tight text-slate-900">{p.name}</div>
+                              <div className="mt-1 text-xs text-slate-500">{p.sku}</div>
+                            </div>
+                            <div className="inline-flex border border-slate-200/70 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
+                              {p.category}
+                            </div>
                           </div>
-                          <div className="inline-flex rounded-full border border-white/12 bg-white/5 px-3 py-1 text-xs font-medium text-white/70">
-                            {p.category}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             </div>
 
             <div className="md:col-span-7 lg:col-span-8">
-              <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/6 to-white/3 p-4 shadow-card">
+              <div className="border border-slate-200/70 bg-white p-3 shadow-card">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <div>
                     <div className="font-display text-xl leading-tight tracking-tight">
                       {mode === "create" ? "Buat Produk" : detail?.name || "Edit Produk"}
                     </div>
-                    <div className="mt-1 text-xs text-white/55">
+                    <div className="mt-1 text-xs text-slate-600">
                       {mode === "create"
                         ? "Isi detail produk, lalu simpan."
                         : detail
@@ -272,22 +273,22 @@ export default function MasterProductPage() {
                 </div>
 
                 {mode === "edit" && loadingDetail ? (
-                  <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/60">
+                  <div className="mt-4 border border-slate-200/70 bg-slate-50 px-4 py-10 text-center text-sm text-slate-600">
                     Loading…
                   </div>
                 ) : (
                   <div className="mt-4 grid gap-4">
                     <div className="grid gap-3 md:grid-cols-12">
                       <div className="md:col-span-4">
-                        <div className="text-xs text-white/55">SKU</div>
+                        <div className="text-xs text-slate-600">SKU</div>
                         <Input value={draft.sku} onChange={(e) => setDraft((p) => ({ ...p, sku: e.target.value }))} className="mt-2 py-2" />
                       </div>
                       <div className="md:col-span-8">
-                        <div className="text-xs text-white/55">Nama produk</div>
+                        <div className="text-xs text-slate-600">Nama produk</div>
                         <Input value={draft.name} onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))} className="mt-2 py-2" />
                       </div>
                       <div className="md:col-span-6">
-                        <div className="text-xs text-white/55">Kategori</div>
+                        <div className="text-xs text-slate-600">Kategori</div>
                         <Input
                           value={draft.category}
                           onChange={(e) => setDraft((p) => ({ ...p, category: e.target.value }))}
@@ -295,7 +296,7 @@ export default function MasterProductPage() {
                         />
                       </div>
                       <div className="md:col-span-6">
-                        <div className="text-xs text-white/55">Harga (IDR)</div>
+                        <div className="text-xs text-slate-600">Harga (IDR)</div>
                         <Input
                           type="number"
                           min={0}
@@ -307,7 +308,7 @@ export default function MasterProductPage() {
                     </div>
 
                     <div>
-                      <div className="text-xs text-white/55">Deskripsi dasar</div>
+                      <div className="text-xs text-slate-600">Deskripsi dasar</div>
                       <TextArea
                         value={draft.base_description}
                         onChange={(e) => setDraft((p) => ({ ...p, base_description: e.target.value }))}

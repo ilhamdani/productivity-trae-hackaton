@@ -32,16 +32,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={t.id}
             className={[
-              "rounded-2xl border px-4 py-3 shadow-card backdrop-blur",
+              "rounded-none border bg-white px-4 py-3 shadow-card",
               t.tone === "success"
-                ? "border-mint-300/25 bg-mint-300/10"
+                ? "border-leaf-200"
                 : t.tone === "danger"
-                  ? "border-red-300/25 bg-red-300/10"
-                  : "border-white/12 bg-white/6",
+                  ? "border-red-200"
+                  : "border-slate-200/70",
             ].join(" ")}
           >
-            <div className="text-sm font-medium text-white/90">{t.title}</div>
-            {t.detail ? <div className="mt-1 text-xs text-white/60">{t.detail}</div> : null}
+            <div className="text-sm font-medium text-slate-900">{t.title}</div>
+            {t.detail ? <div className="mt-1 text-xs text-slate-600">{t.detail}</div> : null}
           </div>
         ))}
       </div>
@@ -54,4 +54,3 @@ export function useToast() {
   if (!ctx) throw new Error("ToastProvider is required");
   return ctx;
 }
-

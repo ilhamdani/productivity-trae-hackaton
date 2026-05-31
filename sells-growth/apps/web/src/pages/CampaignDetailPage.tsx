@@ -29,19 +29,19 @@ const STEP_ORDER = [
 function StepDot({ status }: { status: string }) {
   const cls =
     status === "success"
-      ? "bg-mint-300"
+      ? "bg-leaf-500"
       : status === "failed"
-        ? "bg-red-300"
+        ? "bg-red-500"
         : status === "running"
-          ? "bg-caramel-300 animate-pulse"
-          : "bg-white/30";
-  return <div className={["h-2.5 w-2.5 rounded-full", cls].join(" ")} />;
+          ? "bg-amber-400 animate-pulse"
+          : "bg-slate-300";
+  return <div className={["h-2.5 w-2.5", cls].join(" ")} />;
 }
 
 function JsonBlock({ data }: { data: unknown }) {
   const text = useMemo(() => JSON.stringify(data, null, 2), [data]);
   return (
-    <pre className="max-h-[520px] overflow-auto rounded-2xl border border-white/10 bg-black/30 p-4 text-xs leading-relaxed text-white/80">
+    <pre className="max-h-[520px] overflow-auto border border-slate-200/70 bg-slate-50 p-3 text-xs leading-relaxed text-slate-800">
       {text}
     </pre>
   );
@@ -59,9 +59,9 @@ function CopyCard({
   right?: ReactNode;
 }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+    <div className="border border-slate-200/70 bg-white p-3 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-sm font-medium text-white/85">{title}</div>
+        <div className="text-sm font-medium text-slate-900">{title}</div>
         <div className="flex items-center gap-2">
           {right ? <div>{right}</div> : null}
           <Button variant="ghost" size="sm" onClick={() => onCopy(value || "")} disabled={!value}>
@@ -69,7 +69,7 @@ function CopyCard({
           </Button>
         </div>
       </div>
-      <div className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-white/85 selection:bg-caramel-300/30">
+      <div className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-800 selection:bg-leaf-200/60">
         {value || "—"}
       </div>
     </div>
@@ -88,9 +88,9 @@ function ChipRow({
   onCopyAll?: () => void;
 }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+    <div className="border border-slate-200/70 bg-white p-3 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-sm font-medium text-white/85">{title}</div>
+        <div className="text-sm font-medium text-slate-900">{title}</div>
         {onCopyAll ? (
           <Button variant="ghost" size="sm" onClick={onCopyAll} disabled={items.length === 0}>
             Copy all
@@ -98,13 +98,13 @@ function ChipRow({
         ) : null}
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
-        {items.length === 0 ? <div className="text-sm text-white/50">—</div> : null}
+        {items.length === 0 ? <div className="text-sm text-slate-500">—</div> : null}
         {items.map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => onCopyItem(t)}
-            className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs text-white/75 hover:bg-white/10"
+            className="border border-slate-200/70 bg-slate-50 px-3 py-1 text-xs text-slate-700 hover:bg-slate-100"
             title="Click to copy"
           >
             {t}
@@ -125,16 +125,16 @@ function Table({
   rows: Array<Record<string, any>>;
 }) {
   return (
-    <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5">
-      <div className="border-b border-white/10 px-5 py-4">
-        <div className="text-sm font-medium text-white/85">{title}</div>
+    <div className="overflow-hidden border border-slate-200/70 bg-white shadow-sm">
+      <div className="border-b border-slate-100 px-3 py-2">
+        <div className="text-sm font-medium text-slate-900">{title}</div>
       </div>
       <div className="max-h-[520px] overflow-auto">
         <table className="w-full border-collapse text-left text-sm">
-          <thead className="sticky top-0 bg-black/40 backdrop-blur">
-            <tr className="text-xs text-white/60">
+          <thead className="sticky top-0 bg-white/90 backdrop-blur">
+            <tr className="text-xs text-slate-600">
               {columns.map((c) => (
-                <th key={c.key} className={["border-b border-white/10 px-4 py-3 font-medium", c.className || ""].join(" ")}>
+                <th key={c.key} className={["border-b border-slate-100 px-3 py-2 font-medium", c.className || ""].join(" ")}>
                   {c.label}
                 </th>
               ))}
@@ -143,15 +143,15 @@ function Table({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-6 text-sm text-white/55">
+                <td colSpan={columns.length} className="px-3 py-4 text-sm text-slate-500">
                   —
                 </td>
               </tr>
             ) : null}
             {rows.map((r, i) => (
-              <tr key={i} className="border-b border-white/10 last:border-b-0">
+              <tr key={i} className="border-b border-slate-100 last:border-b-0">
                 {columns.map((c) => (
-                  <td key={c.key} className={["px-4 py-3 align-top text-white/80", c.className || ""].join(" ")}>
+                  <td key={c.key} className={["px-3 py-2 align-top text-slate-800", c.className || ""].join(" ")}>
                     {r[c.key] ?? "—"}
                   </td>
                 ))}
@@ -334,7 +334,7 @@ export default function CampaignDetailPage() {
   const dem = (stepOutput as any)?.target_audience?.demographics || null;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-12">
+    <div className="grid gap-4 lg:grid-cols-12">
       <div className="lg:col-span-4">
         <Card
           title={campaign?.product_name || "Campaign"}
@@ -347,13 +347,15 @@ export default function CampaignDetailPage() {
             </Link>
           }
         >
-          <div className="grid gap-4">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <div className="text-xs text-white/50">Product</div>
-              <div className="mt-2 text-sm text-white/85">{campaign?.product_description}</div>
-              <div className="mt-3 flex flex-wrap gap-2 text-xs text-white/60">
-                <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1">{campaign?.category || "—"}</div>
-                <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
+          <div className="grid gap-3">
+            <div className="border border-slate-200/70 bg-slate-50 p-3">
+              <div className="text-xs text-slate-500">Product</div>
+              <div className="mt-2 text-sm text-slate-800">{campaign?.product_description}</div>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
+                <div className="border border-slate-200/70 bg-white px-3 py-1 shadow-sm">
+                  {campaign?.category || "—"}
+                </div>
+                <div className="border border-slate-200/70 bg-white px-3 py-1 shadow-sm">
                   Rp{campaign?.price?.amount?.toLocaleString("id-ID") || "—"}
                 </div>
               </div>
@@ -366,9 +368,9 @@ export default function CampaignDetailPage() {
             ) : null}
 
             {progress?.error ? (
-              <div className="rounded-2xl border border-red-300/25 bg-red-300/10 p-4">
-                <div className="text-sm font-medium text-red-100">Step failed</div>
-                <div className="mt-1 text-xs text-red-100/80">
+              <div className="border border-red-200 bg-red-50 p-3">
+                <div className="text-sm font-medium text-red-800">Step failed</div>
+                <div className="mt-1 text-xs text-red-700">
                   {progress.error.step_key}: {progress.error.message}
                 </div>
                 <div className="mt-3">
@@ -379,8 +381,8 @@ export default function CampaignDetailPage() {
               </div>
             ) : null}
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <div className="text-sm font-medium text-white/85">Workflow</div>
+            <div className="border border-slate-200/70 bg-white p-3 shadow-sm">
+              <div className="text-sm font-medium text-slate-900">Workflow</div>
               <div className="mt-4 space-y-2">
                 {steps.map((s) => (
                   <button
@@ -388,18 +390,20 @@ export default function CampaignDetailPage() {
                     type="button"
                     onClick={() => setSelectedStep(s.step_key)}
                     className={[
-                      "flex w-full items-center justify-between gap-3 rounded-2xl border px-3 py-3 text-left transition",
-                      selectedStep === s.step_key ? "border-white/18 bg-white/10" : "border-white/10 bg-white/4 hover:bg-white/7",
+                      "flex w-full items-center justify-between gap-3 border px-3 py-2 text-left transition",
+                      selectedStep === s.step_key
+                        ? "border-slate-300 bg-slate-50"
+                        : "border-slate-200/70 bg-white hover:bg-slate-50",
                     ].join(" ")}
                   >
                     <div className="flex items-center gap-3">
                       <StepDot status={s.status} />
                       <div>
-                        <div className="text-sm text-white/90">{STEP_LABELS[s.step_key] || s.step_key}</div>
-                        <div className="mt-0.5 text-[11px] text-white/50">{s.status}</div>
+                        <div className="text-sm text-slate-900">{STEP_LABELS[s.step_key] || s.step_key}</div>
+                        <div className="mt-0.5 text-[11px] text-slate-500">{s.status}</div>
                       </div>
                     </div>
-                    <div className="text-[11px] text-white/45">{s.duration_ms ? `${Math.round(s.duration_ms / 1000)}s` : ""}</div>
+                    <div className="text-[11px] text-slate-500">{s.duration_ms ? `${Math.round(s.duration_ms / 1000)}s` : ""}</div>
                   </button>
                 ))}
               </div>
@@ -427,11 +431,11 @@ export default function CampaignDetailPage() {
           }
         >
           {stepLoading ? (
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/60">
+            <div className="border border-slate-200/70 bg-slate-50 px-4 py-10 text-center text-sm text-slate-600">
               Loading output…
             </div>
           ) : stepOutput ? (
-            <div className="grid gap-5">
+            <div className="grid gap-3">
               {selectedStep === "product_analyst" ? (
                 <div className="grid gap-4">
                   <CopyCard title="Product Summary" value={(stepOutput as any)?.product_summary || ""} onCopy={copyText} />
@@ -449,24 +453,24 @@ export default function CampaignDetailPage() {
                   />
                   <CopyCard title="Positioning Statement" value={(stepOutput as any)?.positioning_statement || ""} onCopy={copyText} />
                   <div className="grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-                      <div className="text-sm font-medium text-white/85">Target Audience</div>
-                      <div className="mt-3 grid gap-3 text-sm text-white/80">
-                        <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                          <div className="text-xs text-white/50">Age range</div>
-                          <div className="mt-1 text-sm text-white/85">{dem?.age_range || "—"}</div>
+                    <div className="border border-slate-200/70 bg-white p-3 shadow-sm">
+                      <div className="text-sm font-medium text-slate-900">Target Audience</div>
+                      <div className="mt-3 grid gap-3 text-sm text-slate-700">
+                        <div className="border border-slate-200/70 bg-slate-50 p-3">
+                          <div className="text-xs text-slate-500">Age range</div>
+                          <div className="mt-1 text-sm text-slate-900">{dem?.age_range || "—"}</div>
                         </div>
-                        <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                          <div className="text-xs text-white/50">Location</div>
-                          <div className="mt-1 text-sm text-white/85">{dem?.location || "—"}</div>
+                        <div className="border border-slate-200/70 bg-slate-50 p-3">
+                          <div className="text-xs text-slate-500">Location</div>
+                          <div className="mt-1 text-sm text-slate-900">{dem?.location || "—"}</div>
                         </div>
-                        <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                          <div className="text-xs text-white/50">Occupation</div>
-                          <div className="mt-1 text-sm text-white/85">{dem?.occupation || "—"}</div>
+                        <div className="border border-slate-200/70 bg-slate-50 p-3">
+                          <div className="text-xs text-slate-500">Occupation</div>
+                          <div className="mt-1 text-sm text-slate-900">{dem?.occupation || "—"}</div>
                         </div>
-                        <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                          <div className="text-xs text-white/50">Pain points</div>
-                          <div className="mt-1 text-sm text-white/85">
+                        <div className="border border-slate-200/70 bg-slate-50 p-3">
+                          <div className="text-xs text-slate-500">Pain points</div>
+                          <div className="mt-1 text-sm text-slate-900">
                             {Array.isArray((stepOutput as any)?.target_audience?.pain_points)
                               ? (((stepOutput as any).target_audience.pain_points as string[]) || []).join(", ")
                               : "—"}
@@ -474,9 +478,9 @@ export default function CampaignDetailPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                    <div className="border border-slate-200/70 bg-white p-3 shadow-sm">
                       <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm font-medium text-white/85">Objections & Answers</div>
+                        <div className="text-sm font-medium text-slate-900">Objections & Answers</div>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -495,11 +499,11 @@ export default function CampaignDetailPage() {
                       <div className="mt-3 grid gap-2">
                         {Array.isArray((stepOutput as any)?.objections_and_answers)
                           ? (((stepOutput as any).objections_and_answers as Array<any>) || []).map((x, i) => (
-                              <div key={i} className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                                <div className="text-xs text-white/50">Objection</div>
-                                <div className="mt-1 text-sm text-white/85">{x?.objection || "—"}</div>
-                                <div className="mt-3 text-xs text-white/50">Answer</div>
-                                <div className="mt-1 text-sm text-white/85">{x?.response || "—"}</div>
+                              <div key={i} className="border border-slate-200/70 bg-slate-50 p-3">
+                                <div className="text-xs text-slate-500">Objection</div>
+                                <div className="mt-1 text-sm text-slate-900">{x?.objection || "—"}</div>
+                                <div className="mt-3 text-xs text-slate-500">Answer</div>
+                                <div className="mt-1 text-sm text-slate-900">{x?.response || "—"}</div>
                               </div>
                             ))
                           : "—"}
@@ -532,9 +536,9 @@ export default function CampaignDetailPage() {
                     onCopyAll={() => copyText((((stepOutput as any)?.messaging_pillars || []) as string[]).join("\n"))}
                   />
                   <div className="grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                    <div className="border border-slate-200/70 bg-white p-3 shadow-sm">
                       <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm font-medium text-white/85">Content Angles</div>
+                        <div className="text-sm font-medium text-slate-900">Content Angles</div>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -547,23 +551,23 @@ export default function CampaignDetailPage() {
                       <div className="mt-3 grid gap-2">
                         {Array.isArray((stepOutput as any)?.content_angles)
                           ? ((stepOutput as any).content_angles as string[]).map((x: string) => (
-                              <div key={x} className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/80">
+                              <div key={x} className="border border-slate-200/70 bg-slate-50 px-3 py-2 text-sm text-slate-700">
                                 {x}
                               </div>
                             ))
                           : "—"}
                       </div>
                     </div>
-                    <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-                      <div className="text-sm font-medium text-white/85">Publishing Plan</div>
-                      <div className="mt-3 grid gap-2 text-sm text-white/80">
-                        <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                    <div className="border border-slate-200/70 bg-white p-3 shadow-sm">
+                      <div className="text-sm font-medium text-slate-900">Publishing Plan</div>
+                      <div className="mt-3 grid gap-2 text-sm text-slate-700">
+                        <div className="border border-slate-200/70 bg-slate-50 px-3 py-2">
                           Duration: {(stepOutput as any)?.publishing_plan?.duration_days ?? "—"} days
                         </div>
-                        <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                        <div className="border border-slate-200/70 bg-slate-50 px-3 py-2">
                           Posts/day: {(stepOutput as any)?.publishing_plan?.posts_per_day ?? "—"}
                         </div>
-                        <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                        <div className="border border-slate-200/70 bg-slate-50 px-3 py-2">
                           Best time windows:{" "}
                           {Array.isArray((stepOutput as any)?.publishing_plan?.best_time_windows)
                             ? (((stepOutput as any).publishing_plan.best_time_windows as string[]) || []).join(", ")
@@ -583,9 +587,9 @@ export default function CampaignDetailPage() {
                       <CopyCard title="Disclaimer" value={(stepOutput as any)?.disclaimer || ""} onCopy={copyText} />
                     </div>
                   ) : null}
-                  <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                  <div className="border border-slate-200/70 bg-white p-3 shadow-sm">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="text-sm font-medium text-white/85">Captions (Ready to copy)</div>
+                      <div className="text-sm font-medium text-slate-900">Captions (Ready to copy)</div>
                       <Button variant="ghost" size="sm" onClick={() => copyText(copyTabText)} disabled={!copyTabText}>
                         Copy current
                       </Button>
@@ -597,16 +601,18 @@ export default function CampaignDetailPage() {
                           type="button"
                           onClick={() => setCopyTab(k)}
                           className={[
-                            "rounded-full border px-3 py-1 text-xs transition",
-                            copyTab === k ? "border-white/18 bg-white/10 text-white" : "border-white/10 bg-black/20 text-white/70 hover:bg-white/8",
+                            "border px-3 py-1 text-xs transition",
+                            copyTab === k
+                              ? "border-leaf-200 bg-leaf-50 text-leaf-800"
+                              : "border-slate-200/70 bg-slate-50 text-slate-700 hover:bg-slate-100",
                           ].join(" ")}
                         >
                           {k === "instagram" ? "Instagram" : k === "tiktok" ? "TikTok" : k === "facebook" ? "Facebook" : "WhatsApp"}
                         </button>
                       ))}
                     </div>
-                    <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
-                      <div className="whitespace-pre-wrap text-sm leading-relaxed text-white/85 selection:bg-caramel-300/30">
+                    <div className="mt-4 border border-slate-200/70 bg-slate-50 p-3">
+                      <div className="whitespace-pre-wrap text-sm leading-relaxed text-slate-800 selection:bg-leaf-200/60">
                         {copyTabText || "—"}
                       </div>
                     </div>
@@ -642,26 +648,26 @@ export default function CampaignDetailPage() {
                   ) : null}
 
                   {effectiveVideoUrl ? (
-                    <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/20">
+                    <div className="overflow-hidden border border-slate-200/70 bg-white shadow-sm">
                       <video src={effectiveVideoUrl} controls className="h-[420px] w-full bg-black object-contain" />
-                      <div className="flex items-center justify-between px-4 py-3 text-xs text-white/60">
+                      <div className="flex items-center justify-between px-3 py-2 text-xs text-slate-600">
                         <div>Video Preview</div>
                         <div className="flex items-center gap-3">
                           <button
                             type="button"
                             onClick={() => copyText(effectiveVideoUrl)}
-                            className="text-caramel-200 underline underline-offset-4"
+                            className="text-leaf-700 underline underline-offset-4"
                           >
                             Copy URL
                           </button>
-                          <a href={effectiveVideoUrl} target="_blank" className="text-caramel-200 underline underline-offset-4">
+                          <a href={effectiveVideoUrl} target="_blank" className="text-leaf-700 underline underline-offset-4">
                             Open URL
                           </a>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="rounded-2xl border border-caramel-300/20 bg-caramel-300/10 p-4 text-xs text-white/75">
+                    <div className="border border-amber-200 bg-amber-50 p-3 text-xs text-slate-700">
                       Video belum tersedia.
                     </div>
                   )}
@@ -744,9 +750,9 @@ export default function CampaignDetailPage() {
               {selectedStep === "campaign_manager" && campaignPackage ? (
                 <div className="grid gap-4">
                   <CopyCard title="Campaign Package Summary" value={campaignPackage.summary || ""} onCopy={copyText} />
-                  <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                  <div className="border border-slate-200/70 bg-white p-3 shadow-sm">
                     <div className="flex items-center justify-between gap-3">
-                      <div className="text-sm font-medium text-white/85">Publish Checklist</div>
+                      <div className="text-sm font-medium text-slate-900">Publish Checklist</div>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -758,7 +764,7 @@ export default function CampaignDetailPage() {
                     </div>
                     <div className="mt-3 grid gap-2">
                       {((campaignPackage.publish_checklist || []) as string[]).map((item: string, i: number) => (
-                        <div key={`${i}-${item}`} className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/80">
+                        <div key={`${i}-${item}`} className="border border-slate-200/70 bg-slate-50 px-3 py-2 text-sm text-slate-700">
                           {item}
                         </div>
                       ))}
@@ -770,7 +776,7 @@ export default function CampaignDetailPage() {
               {showRawJson ? <JsonBlock data={stepOutput} /> : null}
             </div>
           ) : (
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/60">
+            <div className="border border-slate-200/70 bg-slate-50 px-4 py-10 text-center text-sm text-slate-600">
               Belum ada output untuk step ini.
             </div>
           )}
@@ -778,17 +784,17 @@ export default function CampaignDetailPage() {
       </div>
 
       {pendingApproval ? (
-        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/60 p-6 backdrop-blur sm:items-center">
-          <div className="w-full max-w-xl overflow-hidden rounded-3xl border border-white/12 bg-gradient-to-b from-white/10 to-white/6 shadow-card">
-            <div className="border-b border-white/10 px-6 py-5">
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-slate-900/30 p-4 backdrop-blur-sm sm:items-center">
+          <div className="w-full max-w-xl overflow-hidden border border-slate-200/70 bg-white shadow-card">
+            <div className="border-b border-slate-100 px-4 py-3">
               <div className="font-display text-xl tracking-tight">Approve storyboard?</div>
-              <div className="mt-1 text-sm text-white/60">Workflow berhenti setelah Creative Director. Approve untuk lanjut generate video.</div>
+              <div className="mt-1 text-sm text-slate-600">Workflow berhenti setelah Creative Director. Approve untuk lanjut generate video.</div>
             </div>
-            <div className="p-6">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+            <div className="p-4">
+              <div className="border border-slate-200/70 bg-slate-50 p-3 text-sm text-slate-700">
                 Pastikan storyboard sudah sesuai brand dan offer. Jika reject, campaign kembali ke draft.
               </div>
-              <div className="mt-5 flex flex-wrap gap-3">
+              <div className="mt-4 flex flex-wrap gap-2">
                 <Button onClick={approve}>Approve</Button>
                 <Button variant="danger" onClick={reject}>
                   Reject
