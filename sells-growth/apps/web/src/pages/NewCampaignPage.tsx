@@ -114,36 +114,25 @@ export default function NewCampaignPage() {
     setImages((prev) => prev.map((i) => (pending.includes(i) ? { ...i, status: "uploading" } : i)));
 
     try {
-      const presign = await apiFetch<{ items: PresignItem[] }>(`/api/v1/campaigns/${campaignId}/assets/product-images/presign`, {
-        method: "POST",
-        body: JSON.stringify({
-          files: pending.map((p) => ({ filename: p.file.name, content_type: p.file.type || "image/jpeg" })),
-        }),
-      });
-
-      const pairs = presign.items.map((item, idx) => ({ item, local: pending[idx] }));
-
-      for (const p of pairs) {
-        const res = await fetch(p.item.upload_url, {
-          method: "PUT",
-          body: p.local.file,
-          headers: { "Content-Type": p.local.file.type || "image/jpeg" },
-        });
-        if (!res.ok) throw new Error(`Upload failed (${res.status})`);
+      const form = new FormData();
+      for (const p of pending) {
+        form.append("files", p.file, p.file.name);
       }
 
-      const assetIds = presign.items.map((i) => i.asset_id);
-      await apiFetch(`/api/v1/campaigns/${campaignId}/assets/product-images/commit`, {
-        method: "POST",
-        body: JSON.stringify({ asset_ids: assetIds }),
-      });
+      const res = await apiFetch<{ items: Array<{ id: string; asset_type: string; public_url?: string | null }> }>(
+        '/api/v1/campaigns/' + campaignId + '/assets/product-images/upload',
+        {
+          method: "POST",
+          body: form,
+        },
+      );
 
       setImages((prev) => {
         const updated = [...prev];
         let cursor = 0;
         for (let i = 0; i < updated.length; i++) {
           if (updated[i].status === "uploading") {
-            updated[i] = { ...updated[i], status: "ready", assetId: presign.items[cursor]?.asset_id };
+            updated[i] = { ...updated[i], status: "ready", assetId: res.items[cursor]?.id };
             cursor++;
           }
         }
@@ -151,9 +140,10 @@ export default function NewCampaignPage() {
       });
 
       toast.push({ title: "Upload selesai", detail: "Foto produk siap dipakai untuk generate.", tone: "success" });
-    } catch (e: any) {
+    } catch (e) {
       setImages((prev) => prev.map((i) => (i.status === "uploading" ? { ...i, status: "failed" } : i)));
-      toast.push({ title: "Upload gagal", detail: e?.message || "Unknown error", tone: "danger" });
+      const msg = (e && (e.message || e?.message)) ? (e.message || e?.message) : "Unknown error";
+      toast.push({ title: "Upload gagal", detail: msg, tone: "danger" });
     }
   }
 
@@ -293,7 +283,7 @@ export default function NewCampaignPage() {
                 onChange={(e) => uploadSelected(e.target.files)}
                 className="block w-full text-sm text-white/70 file:mr-4 file:rounded-2xl file:border-0 file:bg-white/10 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-white/15"
               />
-              <div className="mt-2 text-xs text-white/45">{campaignId ? "Pilih file, lalu klik Upload." : "Buat draft dulu untuk dapat presigned URL."}</div>
+              <div className="mt-2 text-xs text-white/45">{campaignId ? "Pilih file, lalu klik Upload." : "Buat draft dulu untuk upload."}</div>
             </div>
 
             {images.length ? (
