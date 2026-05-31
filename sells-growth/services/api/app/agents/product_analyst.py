@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from ..contracts.common import Audience
 from ..providers.openai_client import generate_structured
+from ..prompts.defaults import get_default_prompt
 
 
 class ObjectionAnswer(BaseModel):
@@ -20,12 +21,11 @@ class ProductAnalystOutput(BaseModel):
     objections_and_answers: list[ObjectionAnswer] = Field(min_length=1, max_length=5)
 
 
-def run(*, product: dict, options: dict) -> ProductAnalystOutput:
-    prompt = (
-        "You are Product Analyst for UMKM marketing.\n"
-        "Analyze the product and return JSON strictly matching the required schema.\n\n"
-        f"Product:\n{product}\n\n"
-        f"Options:\n{options}\n"
-    )
+def run(*, product: dict, options: dict, prompt_prefix: str | None = None) -> ProductAnalystOutput:
+    prefix = (prompt_prefix or "").strip() or get_default_prompt("product_analyst")
+    parts = [
+        prefix,
+    ]
+    parts.extend([f"Product:\n{product}\n\n", f"Options:\n{options}\n"])
+    prompt = "".join(parts)
     return generate_structured(output_model=ProductAnalystOutput, prompt=prompt)
-

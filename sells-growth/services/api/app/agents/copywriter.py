@@ -3,6 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 from ..providers.openai_client import generate_structured
+from ..prompts.defaults import get_default_prompt
 
 
 class CopywriterOutput(BaseModel):
@@ -16,13 +17,15 @@ class CopywriterOutput(BaseModel):
     disclaimer: str = Field(min_length=3)
 
 
-def run(*, product: dict, options: dict, strategy: dict) -> CopywriterOutput:
-    prompt = (
-        "You are Copywriter for UMKM marketing.\n"
-        "Write multi-channel copy and return JSON strictly matching the required schema.\n\n"
-        f"Product:\n{product}\n\n"
-        f"Options:\n{options}\n\n"
-        f"Strategy:\n{strategy}\n"
+def run(*, product: dict, options: dict, strategy: dict, prompt_prefix: str | None = None) -> CopywriterOutput:
+    prefix = (prompt_prefix or "").strip() or get_default_prompt("copywriter")
+    parts = [prefix]
+    parts.extend(
+        [
+            f"Product:\n{product}\n\n",
+            f"Options:\n{options}\n\n",
+            f"Strategy:\n{strategy}\n",
+        ]
     )
+    prompt = "".join(parts)
     return generate_structured(output_model=CopywriterOutput, prompt=prompt)
-

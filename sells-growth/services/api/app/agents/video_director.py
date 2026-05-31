@@ -3,6 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 from ..providers.openai_client import generate_structured
+from ..prompts.defaults import get_default_prompt
 
 
 class Shot(BaseModel):
@@ -22,14 +23,16 @@ class VideoDirectorOutput(BaseModel):
     voiceover_script: str = Field(min_length=50)
 
 
-def run(*, product: dict, options: dict, storyboard: dict, copy: dict) -> VideoDirectorOutput:
-    prompt = (
-        "You are Video Director for short-form product ads.\n"
-        "Create a shot list and voiceover. Return JSON strictly matching the required schema.\n\n"
-        f"Product:\n{product}\n\n"
-        f"Options:\n{options}\n\n"
-        f"Storyboard:\n{storyboard}\n\n"
-        f"Copy:\n{copy}\n"
+def run(*, product: dict, options: dict, storyboard: dict, copy: dict, prompt_prefix: str | None = None) -> VideoDirectorOutput:
+    prefix = (prompt_prefix or "").strip() or get_default_prompt("video_director")
+    parts = [prefix]
+    parts.extend(
+        [
+            f"Product:\n{product}\n\n",
+            f"Options:\n{options}\n\n",
+            f"Storyboard:\n{storyboard}\n\n",
+            f"Copy:\n{copy}\n",
+        ]
     )
+    prompt = "".join(parts)
     return generate_structured(output_model=VideoDirectorOutput, prompt=prompt)
-

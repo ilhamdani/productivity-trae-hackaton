@@ -21,6 +21,7 @@ from .routes.health import router as health_router
 from .routes.inventory import router as inventory_router
 from .routes.marketplace import router as marketplace_router
 from .routes.me import router as me_router
+from .routes.prompts import router as prompts_router
 from .routes.products import router as products_router
 from .routes.workflow import router as workflow_router
 from .security import hash_api_key
@@ -53,6 +54,7 @@ def create_app() -> FastAPI:
     api_v1.include_router(campaigns_router)
     api_v1.include_router(calendar_router)
     api_v1.include_router(marketplace_router)
+    api_v1.include_router(prompts_router)
     api_v1.include_router(assets_router)
     api_v1.include_router(workflow_router)
 

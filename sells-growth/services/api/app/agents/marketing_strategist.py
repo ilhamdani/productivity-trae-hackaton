@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from ..contracts.common import Audience
 from ..providers.openai_client import generate_structured
+from ..prompts.defaults import get_default_prompt
 
 
 class Offer(BaseModel):
@@ -36,13 +37,8 @@ class MarketingStrategistOutput(BaseModel):
     success_metrics: SuccessMetrics
 
 
-def run(*, product: dict, options: dict, product_insight: dict) -> MarketingStrategistOutput:
-    prompt = (
-        "You are Marketing Strategist for UMKM marketing.\n"
-        "Create a campaign strategy and return JSON strictly matching the required schema.\n\n"
-        f"Product:\n{product}\n\n"
-        f"Options:\n{options}\n\n"
-        f"Product Insight:\n{product_insight}\n"
-    )
+def run(*, product: dict, options: dict, product_insight: dict, prompt_prefix: str | None = None) -> MarketingStrategistOutput:
+    prefix = (prompt_prefix or "").strip() or get_default_prompt("marketing_strategist")
+    parts = [prefix, f"Product:\n{product}\n\n", f"Options:\n{options}\n\n", f"Product Insight:\n{product_insight}\n"]
+    prompt = "".join(parts)
     return generate_structured(output_model=MarketingStrategistOutput, prompt=prompt)
-

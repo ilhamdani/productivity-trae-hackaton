@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from ..agents import campaign_manager, copywriter, creative_director, marketing_strategist, pixverse, product_analyst, video_director
 from ..db.engine import SessionLocal
-from ..db.models import Campaign, CampaignAsset, CampaignProductSnapshot, CampaignStep, Inventory, Product
+from ..db.models import AgentPrompt, Campaign, CampaignAsset, CampaignProductSnapshot, CampaignStep, Inventory, Product
 from ..errors import ApiException
 from ..providers.pixverse_cli import render_video_min_duration
 from ..providers.storage import upload_file
@@ -63,6 +63,13 @@ def _campaign_options(campaign: Campaign) -> dict[str, Any]:
         "brand_tone": campaign.brand_tone or "",
         "target_location": campaign.target_location or "",
     }
+
+
+def _agent_custom_prompt(db: Session, *, user_id: uuid.UUID, agent_key: str) -> str:
+    row = db.execute(select(AgentPrompt).where(AgentPrompt.user_id == user_id, AgentPrompt.agent_key == agent_key)).scalar_one_or_none()
+    if not row:
+        return ""
+    return (row.prompt or "").strip()
 
 
 def _get_step_map(db: Session, campaign_id: uuid.UUID) -> dict[str, CampaignStep]:
@@ -144,16 +151,18 @@ def _run_step(db: Session, *, campaign: Campaign, step: CampaignStep) -> dict[st
 
     product = snapshot.snapshot_json
     options = _campaign_options(campaign)
+    prompt_prefix = _agent_custom_prompt(db, user_id=campaign.user_id, agent_key=step.step_key)
     step_map = _get_step_map(db, campaign.id)
 
     if step.step_key == "product_analyst":
-        return product_analyst.run(product=product, options=options).model_dump(mode="json")
+        return product_analyst.run(product=product, options=options, prompt_prefix=prompt_prefix).model_dump(mode="json")
 
     if step.step_key == "marketing_strategist":
         return marketing_strategist.run(
             product=product,
             options=options,
             product_insight=step_map["product_analyst"].output_json or {},
+            prompt_prefix=prompt_prefix,
         ).model_dump(mode="json")
 
     if step.step_key == "copywriter":
@@ -161,6 +170,7 @@ def _run_step(db: Session, *, campaign: Campaign, step: CampaignStep) -> dict[st
             product=product,
             options=options,
             strategy=step_map["marketing_strategist"].output_json or {},
+            prompt_prefix=prompt_prefix,
         ).model_dump(mode="json")
 
     if step.step_key == "creative_director":
@@ -169,6 +179,7 @@ def _run_step(db: Session, *, campaign: Campaign, step: CampaignStep) -> dict[st
             options=options,
             strategy=step_map["marketing_strategist"].output_json or {},
             copy=step_map["copywriter"].output_json or {},
+            prompt_prefix=prompt_prefix,
         ).model_dump(mode="json")
 
     if step.step_key == "video_director":
@@ -177,6 +188,7 @@ def _run_step(db: Session, *, campaign: Campaign, step: CampaignStep) -> dict[st
             options=options,
             storyboard=step_map["creative_director"].output_json or {},
             copy=step_map["copywriter"].output_json or {},
+            prompt_prefix=prompt_prefix,
         ).model_dump(mode="json")
 
     if step.step_key == "pixverse":
@@ -186,6 +198,7 @@ def _run_step(db: Session, *, campaign: Campaign, step: CampaignStep) -> dict[st
             product_insight=step_map["product_analyst"].output_json or {},
             storyboard=step_map["creative_director"].output_json or {},
             video_plan=step_map["video_director"].output_json or {},
+            prompt_prefix=prompt_prefix,
         )
         work_dir = os.path.join("/tmp", "aigrowthcopilot", str(campaign.id), str(step.id))
         os.makedirs(work_dir, exist_ok=True)
