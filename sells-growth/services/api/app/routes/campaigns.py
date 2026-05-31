@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..auth import AuthContext, require_api_key
 from ..db.engine import get_db
 from ..db.models import Campaign, CampaignAsset, Product
 from ..errors import ApiException
+from ..subscription import count_campaigns_in_window, get_current_month_window_utc, require_premium_access
 
 router = APIRouter(prefix="/campaigns")
 
@@ -102,6 +103,14 @@ def create_campaign(
     ctx: AuthContext = Depends(require_api_key),
     db: Session = Depends(get_db),
 ) -> CampaignCreateResponse:
+    _, plan, member_ids = require_premium_access(db, user_id=ctx.user_id)
+    if plan.campaign_monthly_limit is not None:
+        limit = int(plan.campaign_monthly_limit)
+        start, end = get_current_month_window_utc()
+        used = count_campaigns_in_window(db, user_ids=member_ids, start=start, end=end)
+        if used >= limit:
+            raise ApiException(status_code=403, code="limit_reached", message="Campaign limit reached")
+
     if body.product_id:
         product = db.execute(select(Product).where(Product.id == body.product_id, Product.user_id == ctx.user_id)).scalar_one_or_none()
         if not product:
@@ -189,4 +198,3 @@ def update_campaign(
 
     db.commit()
     return get_campaign(campaign_id, ctx, db)
-

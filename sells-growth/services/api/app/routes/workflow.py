@@ -14,6 +14,7 @@ from ..db.engine import get_db
 from ..db.models import Campaign, CampaignAsset, CampaignProductSnapshot, CampaignStep, Inventory, Product
 from ..errors import ApiException
 from ..orchestrator.state import STEP_KEYS
+from ..subscription import require_premium_access
 
 router = APIRouter(prefix="/campaigns")
 
@@ -109,6 +110,7 @@ def generate_campaign(
     ctx: AuthContext = Depends(require_api_key),
     db: Session = Depends(get_db),
 ) -> StartGenerationResponse:
+    require_premium_access(db, user_id=ctx.user_id)
     campaign = _get_owned_campaign(db, user_id=ctx.user_id, campaign_id=campaign_id)
     if campaign.status != "draft":
         raise ApiException(status_code=409, code="conflict", message="Campaign is not in draft state")

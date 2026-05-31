@@ -65,7 +65,7 @@ export default function MarketplaceImportPage() {
 
   async function doPreview() {
     if (!file) {
-      toast.push({ title: "Pilih file CSV dulu", tone: "warning" });
+      toast.push({ title: "Pilih file CSV dulu", tone: "neutral" });
       return;
     }
     setLoadingPreview(true);
@@ -78,7 +78,7 @@ export default function MarketplaceImportPage() {
         toast.push({
           title: "Kolom wajib belum lengkap",
           detail: `Missing: ${res.missing_required_columns.join(", ")}`,
-          tone: "warning",
+          tone: "neutral",
         });
       } else {
         toast.push({ title: "Preview berhasil", detail: `${res.total_rows} rows, ${res.unique_skus} SKU`, tone: "success" });
@@ -93,7 +93,7 @@ export default function MarketplaceImportPage() {
 
   async function doCommit() {
     if (!file) {
-      toast.push({ title: "Pilih file CSV dulu", tone: "warning" });
+      toast.push({ title: "Pilih file CSV dulu", tone: "neutral" });
       return;
     }
     setLoadingCommit(true);
@@ -206,4 +206,3 @@ export default function MarketplaceImportPage() {
     </div>
   );
 }
-

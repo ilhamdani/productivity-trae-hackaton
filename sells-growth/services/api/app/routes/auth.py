@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..db.engine import get_db
-from ..db.models import ApiKey, User
+from ..db.models import ApiKey, PricingPlan, User, UserSubscription
 from ..errors import ApiException
 from ..security import hash_api_key, hash_password, verify_password
 from ..settings import Settings, get_settings
@@ -55,6 +55,15 @@ def register(
         db.rollback()
         raise ApiException(status_code=409, code="conflict", message="Username already exists")
 
+    free_plan = db.execute(select(PricingPlan).where(PricingPlan.key == "free")).scalar_one_or_none()
+    db.add(
+        UserSubscription(
+            user_id=user.id,
+            plan_key="free",
+            status="active",
+            pricing_plan_id=(None if not free_plan else free_plan.id),
+        )
+    )
     api_key = _issue_api_key(db, settings=settings, user_id=user.id)
     return AuthResponse(user_id=user.id, username=username, api_key=api_key)
 

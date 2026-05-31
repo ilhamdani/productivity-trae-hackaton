@@ -1,6 +1,8 @@
-import { type ReactNode } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
-import Button from "./Button";
+import { type ReactNode, useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { apiFetch } from "../api/client";
+import { setApiKey } from "../api/storage";
+import type { MeResponse } from "../api/types";
 import Input from "./Input";
 
 function Icon({
@@ -13,11 +15,18 @@ function Icon({
 
 export default function AppShell() {
   const location = useLocation();
+  const me = useLoadMe();
   const title =
     location.pathname.startsWith("/campaigns/new")
       ? "New Campaign"
       : location.pathname.startsWith("/campaigns/")
         ? "Campaign"
+        : location.pathname.startsWith("/subscription")
+          ? "Subscription"
+          : location.pathname.startsWith("/payment")
+            ? "Payment"
+            : location.pathname.startsWith("/settings")
+              ? "Settings"
         : location.pathname.startsWith("/calendar")
           ? "Content Calendar"
           : location.pathname.startsWith("/marketplace-import")
@@ -187,13 +196,15 @@ export default function AppShell() {
               >
                 + New Campaign
               </NavLink>
-              <div className="hidden items-center gap-2 md:flex">
+              <NavLink to="/settings" className="hidden items-center gap-2 md:flex">
                 <div className="h-9 w-9 rounded-none bg-slate-100" />
                 <div className="text-xs leading-tight">
                   <div className="font-medium text-slate-800">Profile</div>
-                  <div className="text-slate-500">Admin</div>
+                  <div className="text-slate-500">
+                    {me?.username || "—"}
+                  </div>
                 </div>
-              </div>
+              </NavLink>
             </div>
           </div>
 
@@ -204,5 +215,30 @@ export default function AppShell() {
       </div>
     </div>
   );
+}
+
+export function useLoadMe() {
+  const nav = useNavigate();
+  const [me, setMe] = useState<MeResponse | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    apiFetch<MeResponse>("/api/v1/me")
+      .then((res) => {
+        if (mounted) setMe(res);
+      })
+      .catch((e: any) => {
+        if (!mounted) return;
+        if (e?.code === "unauthorized") {
+          setApiKey("");
+          nav("/login", { replace: true });
+        }
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [nav]);
+
+  return me;
 }
 

@@ -55,3 +55,49 @@ export type ContentDraft = {
   created_at: string;
   updated_at: string;
 };
+
+export type MeResponse = {
+  user_id: string;
+  username?: string | null;
+  role?: string | null;
+  subscription?: UserSubscriptionInfo | null;
+};
+
+export type PricingPlanBrief = {
+  id: string;
+  key: string;
+  name: string;
+  price_amount: number;
+  currency: string;
+  interval: string;
+  is_active: boolean;
+  campaign_monthly_limit?: number | null;
+  user_seats_limit?: number | null;
+};
+
+export type UserSubscriptionInfo = {
+  pricing_plan_id?: string | null;
+  plan_key: string;
+  pricing_plan?: PricingPlanBrief | null;
+  status: string;
+  started_at: string;
+  current_period_end?: string | null;
+};
+
+export type UserListItem = {
+  id: string;
+  username?: string | null;
+  role: string;
+};
+
+export type TeamBrief = {
+  id: string;
+  name: string;
+  owner_user_id: string;
+};
+
+export type UsersListResponse = {
+  team?: TeamBrief | null;
+  subscription?: UserSubscriptionInfo | null;
+  users: UserListItem[];
+};

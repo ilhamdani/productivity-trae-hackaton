@@ -16,6 +16,7 @@ from ..db.models import Campaign, CampaignAsset
 from ..errors import ApiException
 from ..providers.storage import presign_put_object, upload_file
 from ..settings import get_settings
+from ..subscription import require_premium_access
 
 router = APIRouter(prefix="/campaigns")
 
@@ -79,6 +80,7 @@ def presign_product_images(
     ctx: AuthContext = Depends(require_api_key),
     db: Session = Depends(get_db),
 ) -> PresignResponse:
+    require_premium_access(db, user_id=ctx.user_id)
     campaign = _get_owned_campaign(db, user_id=ctx.user_id, campaign_id=campaign_id)
     _ensure_campaign_editable(campaign=campaign)
     _ensure_image_limit(db, campaign_id=campaign.id, incoming=len(body.files))
@@ -113,6 +115,7 @@ def upload_product_images(
     ctx: AuthContext = Depends(require_api_key),
     db: Session = Depends(get_db),
 ) -> CommitResponse:
+    require_premium_access(db, user_id=ctx.user_id)
     campaign = _get_owned_campaign(db, user_id=ctx.user_id, campaign_id=campaign_id)
     _ensure_campaign_editable(campaign=campaign)
 
@@ -177,6 +180,7 @@ def commit_product_images(
     ctx: AuthContext = Depends(require_api_key),
     db: Session = Depends(get_db),
 ) -> CommitResponse:
+    require_premium_access(db, user_id=ctx.user_id)
     campaign = _get_owned_campaign(db, user_id=ctx.user_id, campaign_id=campaign_id)
     _ensure_campaign_editable(campaign=campaign)
 

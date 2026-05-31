@@ -26,6 +26,15 @@ const STEP_ORDER = [
   "campaign_manager",
 ];
 
+function friendlyErrorDetail(e: any) {
+  const code = e?.code;
+  if (code === "limit_reached") return "Limit campaign bulan ini sudah tercapai. Hubungi admin untuk upgrade plan.";
+  if (code === "plan_inactive") return "Plan kamu sedang nonaktif. Hubungi admin untuk aktivasi atau ganti plan.";
+  if (code === "subscription_inactive") return "Subscription kamu tidak aktif. Hubungi admin.";
+  if (code === "seats_limit_reached") return "Jumlah anggota team melebihi batas seats plan. Hubungi admin.";
+  return e?.message || "Unknown error";
+}
+
 function StepDot({ status }: { status: string }) {
   const cls =
     status === "success"
@@ -252,7 +261,7 @@ export default function CampaignDetailPage() {
       toast.push({ title: "Generation started", detail: "Workflow mulai berjalan.", tone: "success" });
       await loadProgress();
     } catch (e: any) {
-      toast.push({ title: "Gagal start generate", detail: e?.message || "Unknown error", tone: "danger" });
+      toast.push({ title: "Gagal start generate", detail: friendlyErrorDetail(e), tone: "danger" });
     }
   }
 

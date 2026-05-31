@@ -25,8 +25,13 @@ class Settings(BaseSettings):
     api_key_salt: str = Field(default="devsalt", alias="API_KEY_SALT")
     seed_demo: bool = Field(default=False, alias="SEED_DEMO")
     demo_api_key: str | None = Field(default=None, alias="DEMO_API_KEY")
+    superadmin_username: str = Field(default="admin", alias="SUPERADMIN_USERNAME")
+    superadmin_password: str = Field(default="admin123", alias="SUPERADMIN_PASSWORD")
 
-    cors_origins: str = Field(default="http://localhost:5173", alias="CORS_ORIGINS")
+    cors_origins: str = Field(
+        default="http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174",
+        alias="CORS_ORIGINS",
+    )
 
     progress_poll_ms: int = Field(default=1500, alias="PROGRESS_POLL_MS")
     pixverse_poll_sec: int = Field(default=8, alias="PIXVERSE_POLL_SEC")

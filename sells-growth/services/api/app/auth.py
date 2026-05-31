@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from .errors import ApiException
 from .db.engine import get_db
-from .db.models import ApiKey
+from .db.models import ApiKey, User
 from .security import hash_api_key
 from .settings import Settings, get_settings
 
@@ -35,3 +35,15 @@ def require_api_key(
         raise ApiException(status_code=401, code="unauthorized", message="Invalid API key")
 
     return AuthContext(user_id=api_key_row.user_id, api_key=x_api_key)
+
+
+def require_super_admin(
+    ctx: AuthContext = Depends(require_api_key),
+    db: Session = Depends(get_db),
+) -> AuthContext:
+    user = db.execute(select(User).where(User.id == ctx.user_id)).scalar_one_or_none()
+    if not user:
+        raise ApiException(status_code=401, code="unauthorized", message="Invalid API key")
+    if user.role != "super_admin":
+        raise ApiException(status_code=403, code="forbidden", message="Forbidden")
+    return ctx

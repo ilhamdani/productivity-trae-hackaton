@@ -59,7 +59,7 @@ services:
       API_KEY_SALT: ${API_KEY_SALT:-devsalt}
       SEED_DEMO: ${SEED_DEMO:-true}
       DEMO_API_KEY: ${DEMO_API_KEY:-dev}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173},http://localhost:5174,http://127.0.0.1:5174
       PROGRESS_POLL_MS: ${PROGRESS_POLL_MS:-1500}
       PIXVERSE_POLL_SEC: ${PIXVERSE_POLL_SEC:-8}
     ports:
@@ -75,6 +75,15 @@ services:
       - api
     ports:
       - "5173:5173"
+
+  web-admin:
+    build:
+      context: ../apps/web-admin
+      dockerfile: Dockerfile
+    depends_on:
+      - api
+    ports:
+      - "5174:5174"
 
 volumes:
   db_data:

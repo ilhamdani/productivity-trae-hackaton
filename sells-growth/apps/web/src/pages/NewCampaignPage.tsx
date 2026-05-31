@@ -17,6 +17,15 @@ function money(amount: string): Money {
   return { currency: "IDR", amount: Number.isFinite(n) ? n : 0 };
 }
 
+function friendlyErrorDetail(e: any) {
+  const code = e?.code;
+  if (code === "limit_reached") return "Limit campaign bulan ini sudah tercapai. Hubungi admin untuk upgrade plan.";
+  if (code === "plan_inactive") return "Plan kamu sedang nonaktif. Hubungi admin untuk aktivasi atau ganti plan.";
+  if (code === "subscription_inactive") return "Subscription kamu tidak aktif. Hubungi admin.";
+  if (code === "seats_limit_reached") return "Jumlah anggota team melebihi batas seats plan. Hubungi admin.";
+  return e?.message || "Unknown error";
+}
+
 export default function NewCampaignPage() {
   const toast = useToast();
   const nav = useNavigate();
@@ -90,7 +99,7 @@ export default function NewCampaignPage() {
       setCampaignId(res.id);
       toast.push({ title: "Draft created", detail: "Sekarang upload minimal 1 foto produk.", tone: "success" });
     } catch (e: any) {
-      toast.push({ title: "Gagal create draft", detail: e?.message || "Unknown error", tone: "danger" });
+      toast.push({ title: "Gagal create draft", detail: friendlyErrorDetail(e), tone: "danger" });
     }
   }
 
@@ -142,7 +151,7 @@ export default function NewCampaignPage() {
       toast.push({ title: "Upload selesai", detail: "Foto produk siap dipakai untuk generate.", tone: "success" });
     } catch (e: any) {
       setImages((prev) => prev.map((i) => (i.status === "uploading" ? { ...i, status: "failed" } : i)));
-      toast.push({ title: "Upload gagal", detail: e?.message || "Unknown error", tone: "danger" });
+      toast.push({ title: "Upload gagal", detail: friendlyErrorDetail(e), tone: "danger" });
     }
   }
 
@@ -153,7 +162,7 @@ export default function NewCampaignPage() {
       toast.push({ title: "Generation started", detail: "Workflow mulai berjalan.", tone: "success" });
       nav(`/campaigns/${campaignId}`);
     } catch (e: any) {
-      toast.push({ title: "Gagal start generate", detail: e?.message || "Unknown error", tone: "danger" });
+      toast.push({ title: "Gagal start generate", detail: friendlyErrorDetail(e), tone: "danger" });
     }
   }
 

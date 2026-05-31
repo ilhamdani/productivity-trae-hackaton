@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../api/client";
+import type { MeResponse, UsersListResponse } from "../api/types";
 import { getApiBaseUrl, getApiKey, setApiBaseUrl, setApiKey } from "../api/storage";
 import Button from "../components/Button";
 import Card from "../components/Card";
@@ -21,19 +22,22 @@ export default function SettingsPage() {
   const nav = useNavigate();
   const toast = useToast();
 
-  const [tab, setTab] = useState<"settings" | "prompts">("settings");
+  const [tab, setTab] = useState<"user" | "settings" | "prompts">("user");
   const [apiBaseUrl, setApiBaseUrlState] = useState(getApiBaseUrl());
   const [apiKey, setApiKeyState] = useState(getApiKey());
   const keyPreview = useMemo(() => (apiKey ? `${apiKey.slice(0, 3)}…${apiKey.slice(-2)}` : "—"), [apiKey]);
   const [promptMap, setPromptMap] = useState<Record<string, string>>({});
   const [loadingPrompts, setLoadingPrompts] = useState(false);
   const [savingPrompts, setSavingPrompts] = useState(false);
+  const [me, setMe] = useState<MeResponse | null>(null);
+  const [users, setUsers] = useState<UsersListResponse | null>(null);
+  const [loadingUser, setLoadingUser] = useState(false);
 
   async function testConnection() {
     try {
       await apiFetch<{ status: string }>("/health", { skipAuth: true });
-      const me = await apiFetch<{ user_id: string }>("/api/v1/me");
-      toast.push({ title: "Koneksi OK", detail: `Auth OK (user_id: ${me.user_id})`, tone: "success" });
+      const res = await apiFetch<MeResponse>("/api/v1/me");
+      toast.push({ title: "Koneksi OK", detail: `Auth OK (${res.username || "user"})`, tone: "success" });
     } catch (e: any) {
       toast.push({ title: "Koneksi gagal", detail: e?.message || "Unknown error", tone: "danger" });
     }
@@ -51,6 +55,20 @@ export default function SettingsPage() {
     toast.push({ title: "Settings tersimpan", detail: `API: ${apiBaseUrl}`, tone: "success" });
     nav("/campaigns");
   }
+
+  const loadUser = useCallback(async () => {
+    if (!apiKey) return;
+    setLoadingUser(true);
+    try {
+      const [meRes, usersRes] = await Promise.all([apiFetch<MeResponse>("/api/v1/me"), apiFetch<UsersListResponse>("/api/v1/users")]);
+      setMe(meRes);
+      setUsers(usersRes);
+    } catch (e: any) {
+      toast.push({ title: "Gagal load user", detail: e?.message || "Unknown error", tone: "danger" });
+    } finally {
+      setLoadingUser(false);
+    }
+  }, [apiKey, toast]);
 
   const loadPrompts = useCallback(async () => {
     if (!apiKey) return;
@@ -71,7 +89,7 @@ export default function SettingsPage() {
 
   async function savePrompts() {
     if (!apiKey) {
-      toast.push({ title: "Isi API key dulu", tone: "warning" });
+      toast.push({ title: "Isi API key dulu", tone: "neutral" });
       return;
     }
     setSavingPrompts(true);
@@ -93,6 +111,10 @@ export default function SettingsPage() {
     if (tab === "prompts") loadPrompts();
   }, [loadPrompts, tab]);
 
+  useEffect(() => {
+    if (tab === "user") loadUser();
+  }, [loadUser, tab]);
+
   return (
     <div className="mx-auto max-w-4xl">
       <Card
@@ -108,9 +130,20 @@ export default function SettingsPage() {
           <div className="rounded-none border border-slate-200/70 bg-white p-2">
             <button
               type="button"
-              onClick={() => setTab("settings")}
+              onClick={() => setTab("user")}
               className={[
                 "flex w-full items-center justify-between rounded-none px-3 py-2 text-left text-sm transition",
+                tab === "user" ? "bg-leaf-50 text-leaf-700" : "text-slate-700 hover:bg-slate-50",
+              ].join(" ")}
+            >
+              <span className="font-medium">User</span>
+              <span className="text-xs text-slate-500">Profile</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("settings")}
+              className={[
+                "mt-1 flex w-full items-center justify-between rounded-none px-3 py-2 text-left text-sm transition",
                 tab === "settings" ? "bg-leaf-50 text-leaf-700" : "text-slate-700 hover:bg-slate-50",
               ].join(" ")}
             >
@@ -130,7 +163,148 @@ export default function SettingsPage() {
             </button>
           </div>
 
-          {tab === "settings" ? (
+          {tab === "user" ? (
+            <div className="grid gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold text-slate-900">Profil</div>
+                  <div className="mt-1 text-xs text-slate-500">Info akun dari API key yang aktif.</div>
+                </div>
+                <Button variant="ghost" size="sm" onClick={loadUser} disabled={!apiKey || loadingUser}>
+                  {loadingUser ? "Refresh…" : "Refresh"}
+                </Button>
+              </div>
+
+              {!apiKey ? (
+                <div className="text-sm text-slate-600">Isi X-API-Key dulu untuk melihat profil.</div>
+              ) : (
+                <div className="grid gap-4">
+                  <div className="rounded-none border border-slate-200/70 bg-white p-4">
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <div>
+                        <div className="text-xs text-slate-500">Username</div>
+                        <div className="mt-1 text-sm font-medium text-slate-900">{me?.username || "—"}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500">Role</div>
+                        <div className="mt-1 text-sm font-medium text-slate-900">{me?.role || "—"}</div>
+                      </div>
+                      <div />
+                    </div>
+                    {users?.team ? (
+                      <div className="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-600">
+                        Team: <span className="font-medium text-slate-800">{users.team.name}</span>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="rounded-none border border-slate-200/70 bg-white p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-900">Subscription</div>
+                        <div className="mt-1 text-xs text-slate-500">Info subscription untuk akses fitur premium & limit.</div>
+                      </div>
+                      <div className="text-xs text-slate-500">{users?.subscription?.status || me?.subscription?.status || "—"}</div>
+                    </div>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                      <div>
+                        <div className="text-xs text-slate-500">Plan</div>
+                        <div className="mt-1 text-sm font-medium text-slate-900">
+                          {users?.subscription?.pricing_plan?.name || me?.subscription?.pricing_plan?.name || users?.subscription?.plan_key || me?.subscription?.plan_key || "—"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500">Active</div>
+                        <div className="mt-1 text-sm font-medium text-slate-900">
+                          {(users?.subscription?.pricing_plan || me?.subscription?.pricing_plan)
+                            ? (users?.subscription?.pricing_plan?.is_active ?? me?.subscription?.pricing_plan?.is_active)
+                              ? "yes"
+                              : "no"
+                            : "—"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500">Current period end</div>
+                        <div className="mt-1 text-sm font-medium text-slate-900">
+                          {users?.subscription?.current_period_end || me?.subscription?.current_period_end
+                            ? new Date((users?.subscription?.current_period_end || me?.subscription?.current_period_end) as string).toLocaleString()
+                            : "—"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500">Campaign / month</div>
+                        <div className="mt-1 text-sm font-medium text-slate-900">
+                          {users?.subscription?.pricing_plan?.campaign_monthly_limit ??
+                            me?.subscription?.pricing_plan?.campaign_monthly_limit ??
+                            "—"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500">User seats</div>
+                        <div className="mt-1 text-sm font-medium text-slate-900">
+                          {users?.subscription?.pricing_plan?.user_seats_limit ?? me?.subscription?.pricing_plan?.user_seats_limit ?? "—"}
+                        </div>
+                      </div>
+                      <div />
+                    </div>
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                      <div className="text-xs text-slate-500">Mau bayar / perpanjang subscription?</div>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          nav("/payment?months=1");
+                        }}
+                        disabled={!apiKey}
+                      >
+                        Bayar
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-none border border-slate-200/70 bg-white">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-900">Users</div>
+                        <div className="mt-1 text-xs text-slate-500">User biasa (role selain super_admin).</div>
+                      </div>
+                      <div className="text-xs text-slate-500">{(users?.users || []).length} users</div>
+                    </div>
+                    <div className="max-h-[420px] overflow-auto">
+                      <table className="w-full border-collapse text-left text-sm">
+                        <thead className="sticky top-0 bg-white">
+                          <tr className="text-xs text-slate-600">
+                            <th className="border-b border-slate-100 px-4 py-2 font-medium">Username</th>
+                            <th className="border-b border-slate-100 px-4 py-2 font-medium">Role</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(users?.users || []).map((u) => (
+                            <tr key={u.id} className="border-b border-slate-100 last:border-b-0">
+                              <td className="px-4 py-2 align-top text-slate-900">{u.username || "—"}</td>
+                              <td className="px-4 py-2 align-top text-slate-700">{u.role}</td>
+                            </tr>
+                          ))}
+                          {(users?.users || []).length === 0 ? (
+                            <tr>
+                              <td className="px-4 py-8 text-center text-sm text-slate-600" colSpan={2}>
+                                Tidak ada user.
+                              </td>
+                            </tr>
+                          ) : null}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    <Button variant="danger" onClick={logout}>
+                      Logout
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : tab === "settings" ? (
             <div className="grid gap-4">
               <div>
                 <div className="mb-2 text-sm text-slate-700">API Base URL</div>
@@ -146,11 +320,6 @@ export default function SettingsPage() {
                 <Button variant="ghost" onClick={testConnection}>
                   Test Connection
                 </Button>
-                {apiKey ? (
-                  <Button variant="danger" onClick={logout}>
-                    Logout
-                  </Button>
-                ) : null}
                 <Button onClick={save}>Save</Button>
               </div>
             </div>

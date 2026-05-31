@@ -11,10 +11,11 @@ from sqlalchemy.orm import Session
 
 from .auth import require_api_key
 from .db.engine import SessionLocal
-from .db.models import ApiKey, Campaign, CampaignAsset, Inventory, Product, User
+from .db.models import ApiKey, Campaign, CampaignAsset, Inventory, PricingPlan, Product, User, UserSubscription
 from .errors import install_error_handlers
 from .routes.assets import router as assets_router
 from .routes.auth import router as auth_router
+from .routes.admin import router as admin_router
 from .routes.campaigns import router as campaigns_router
 from .routes.calendar import router as calendar_router
 from .routes.health import router as health_router
@@ -23,8 +24,9 @@ from .routes.marketplace import router as marketplace_router
 from .routes.me import router as me_router
 from .routes.prompts import router as prompts_router
 from .routes.products import router as products_router
+from .routes.users import router as users_router
 from .routes.workflow import router as workflow_router
-from .security import hash_api_key
+from .security import hash_api_key, hash_password
 from .settings import get_settings
 from .orchestrator.runner import worker_loop
 from .providers.storage import upload_file
@@ -49,12 +51,14 @@ def create_app() -> FastAPI:
 
     api_v1 = APIRouter(prefix="/api/v1", dependencies=[Depends(require_api_key)])
     api_v1.include_router(me_router)
+    api_v1.include_router(users_router)
     api_v1.include_router(products_router)
     api_v1.include_router(inventory_router)
     api_v1.include_router(campaigns_router)
     api_v1.include_router(calendar_router)
     api_v1.include_router(marketplace_router)
     api_v1.include_router(prompts_router)
+    api_v1.include_router(admin_router)
     api_v1.include_router(assets_router)
     api_v1.include_router(workflow_router)
 
@@ -69,13 +73,37 @@ def create_app() -> FastAPI:
 
         db: Session = SessionLocal()
         try:
-            existing_user = db.execute(select(User).limit(1)).scalar_one_or_none()
-            if existing_user:
-                user = existing_user
-            else:
-                user = User(id=uuid.uuid4(), email=None)
+            username = settings.superadmin_username.strip().lower()
+            password = settings.superadmin_password
+
+            user = db.execute(select(User).where(User.username == username)).scalar_one_or_none()
+            if not user:
+                user = User(
+                    id=uuid.uuid4(),
+                    email=None,
+                    username=username,
+                    password_hash=hash_password(password=password),
+                    role="super_admin",
+                )
                 db.add(user)
                 db.flush()
+            else:
+                user.username = username
+                user.password_hash = hash_password(password=password)
+                if user.role != "super_admin":
+                    user.role = "super_admin"
+
+            existing_sub = db.execute(select(UserSubscription).where(UserSubscription.user_id == user.id)).scalar_one_or_none()
+            if not existing_sub:
+                free_plan = db.execute(select(PricingPlan).where(PricingPlan.key == "free")).scalar_one_or_none()
+                db.add(
+                    UserSubscription(
+                        user_id=user.id,
+                        plan_key="free",
+                        status="active",
+                        pricing_plan_id=(None if not free_plan else free_plan.id),
+                    )
+                )
 
             key_hash = hash_api_key(api_key=settings.demo_api_key, salt=settings.api_key_salt)
             existing_key = db.execute(select(ApiKey).where(ApiKey.key_hash == key_hash)).scalar_one_or_none()
