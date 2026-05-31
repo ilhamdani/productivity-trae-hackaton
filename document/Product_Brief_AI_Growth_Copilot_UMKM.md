@@ -1,7 +1,9 @@
 # Product Brief — AI Growth Copilot (UMKM)
 
 ## 1) Ringkasan
-AI Growth Copilot adalah aplikasi desktop (Electron) berbasis AI multi-agent yang membantu pelaku UMKM membuat paket kampanye pemasaran siap publikasi hanya dari data produk dan foto. Sistem bertindak sebagai “AI Marketing Department” yang menyusun insight produk, strategi kampanye, copy multi-channel, creative brief, storyboard, shotlist, prompt PixVerse, hingga video promosi, lalu merangkumnya menjadi campaign package.
+AI Growth Copilot adalah aplikasi berbasis AI multi-agent yang membantu pelaku UMKM membuat paket kampanye pemasaran siap publikasi hanya dari data produk dan foto. Sistem bertindak sebagai “AI Marketing Department” yang menyusun insight produk, strategi kampanye, copy multi-channel, creative brief, storyboard, shotlist, prompt PixVerse, hingga video promosi, lalu merangkumnya menjadi campaign package.
+
+Implementasi demo saat ini berjalan sebagai web app (React + Vite) yang terhubung ke backend FastAPI via API key.
 
 ---
 
@@ -30,6 +32,9 @@ AI Growth Copilot menyederhanakan proses menjadi satu alur terpadu: pilih/isi pr
 Dari: “Punya produk tapi tidak tahu cara memasarkan dan bikin konten.”  
 Menjadi: “Pilih/unggah produk → dapat kampanye lengkap (strategi + copy + video) dalam beberapa menit.”
 
+Ekspansi untuk positioning subscription:
+Menjadi: “Satu dashboard untuk launch: generate konten → susun jadwal multi-channel → pantau engagement → iterasi (berbasis data & stok).”
+
 ---
 
 ## 5) Solusi & Cara Kerja (High Level)
@@ -45,8 +50,16 @@ Menjadi: “Pilih/unggah produk → dapat kampanye lengkap (strategi + copy + vi
 - **Product & Inventory (Data Only):** simpan master produk + stok; campaign mengambil snapshot saat generate.
 - **Generate Campaign End-to-End:** menghasilkan strategi + copy + storyboard + shotlist + prompt + video.
 - **Workflow Visualization:** status setiap agent (queued/running/success/failed) dan retry per step.
+- **Storyboard Approval Gate:** workflow berhenti setelah storyboard untuk approve/reject sebelum lanjut ke produksi video.
 - **Campaign Dashboard:** tampilan output terstruktur per section + export JSON.
 - **Asset Management:** simpan foto dan video di MinIO (S3); download/copy link.
+
+## 6.1 Ekspansi “Launch Dashboard” (Subscription-ready)
+- **Integrations Hub:** connect akun Instagram, TikTok, Facebook, WhatsApp Business (official API).
+- **Content Calendar (Scheduling Draft):** buat & jadwalkan draft per channel (tanpa auto-posting di v1) + reminder + checklist publish manual.
+- **Analytics Dashboard:** ringkas metrik performa per channel dan per campaign; dukung input manual post URL/ID bila API terbatas.
+- **Marketplace Manual Import:** import CSV produk/stok/order ringkas + mapping SKU; dipakai untuk CTA stock-aware dan rekomendasi offer.
+- **Offer Builder:** generator varian offer (mekanik promo, headline, CTA, guardrails) yang langsung bisa dijadikan draft kalender.
 
 ---
 
@@ -67,8 +80,9 @@ Menjadi: “Pilih/unggah produk → dapat kampanye lengkap (strategi + copy + vi
 ---
 
 ## 9) Tech Stack (Target)
-- **Frontend:** Electron + React + TypeScript + Vite + Tailwind + shadcn/ui
-- **Backend:** Python (FastAPI) + JWT auth
+- **Frontend (Demo saat ini):** Web app React + TypeScript + Vite + Tailwind
+- **Frontend (Roadmap):** Electron wrapper untuk offline-first dan integrasi OS (opsional)
+- **Backend:** Python (FastAPI) + API key auth (`X-API-Key`)
 - **Database:** PostgreSQL
 - **Object Storage:** MinIO (S3)
 - **AI Text:** OpenAI API (output JSON terstruktur)
@@ -78,7 +92,6 @@ Menjadi: “Pilih/unggah produk → dapat kampanye lengkap (strategi + copy + vi
 ---
 
 ## 10) Roadmap (Ringkas)
-- Phase 2: Integrasi Instagram/TikTok + autoposting + scheduler.
-- Phase 3: Analisis kompetitor + prediksi tren + rekomendasi konten.
-- Phase 4: Autonomous marketing loop (generate → post → measure → iterate).
-
+- v1 Launch Dashboard: integrations + calendar drafts + analytics baseline + marketplace CSV import + offer builder.
+- v2: auto-posting (per platform yang memungkinkan) + inbox-lite (template + assisted replies) untuk DM/WhatsApp.
+- v3: closed-loop optimization (generate → jadwalkan → ukur → rekomendasi iterasi) berbasis performance + inventory + margin.

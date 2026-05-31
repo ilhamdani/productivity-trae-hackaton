@@ -183,7 +183,7 @@ export default function MasterProductPage() {
     <div className="grid gap-4">
       <Card
         title="Master Product"
-        subtitle="CRUD produk yang dipakai saat bikin campaign."
+        subtitle="Kelola katalog produk untuk kebutuhan campaign."
         right={
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" onClick={startCreate}>

@@ -5,7 +5,7 @@ Dokumen ini mendefinisikan spesifikasi fungsional MVP “AI Growth Copilot” se
 
 Dokumen ini mencakup:
 - Ruang lingkup fitur MVP dan perilaku sistem
-- Arsitektur solusi dan tech stack: Python (FastAPI), PostgreSQL, Electron, Docker
+- Arsitektur solusi dan tech stack: Python (FastAPI), PostgreSQL, Web UI (React+Vite), Docker
 - Spesifikasi API (kontrak request/response) dan status workflow
 - Skema database (PostgreSQL) dan aturan akses
 - Mockup desain (wireframe) untuk halaman utama MVP
@@ -23,17 +23,16 @@ Dokumen ini mencakup:
 ## 3) Tech Stack & Arsitektur
 
 ### 3.1 Tech Stack
-**Frontend**
-- Electron (Desktop App)
-- React + TypeScript
+**Frontend (Implementasi Demo Saat Ini)**
+- Web app: React + TypeScript
 - Vite
-- Tailwind CSS + shadcn/ui
+- Tailwind CSS
 
 **Backend**
 - Python 3.12+
 - FastAPI (REST) + Pydantic (validation)
 - Uvicorn (ASGI server)
-- JWT auth (FastAPI dependency/middleware)
+- Auth: API key via header `X-API-Key`
 - OpenAPI/Swagger (built-in FastAPI)
 
 **Database**
@@ -49,16 +48,16 @@ Dokumen ini mencakup:
 
 ### 3.2 Arsitektur Layanan (MVP)
 Komponen utama:
-- Electron Desktop App: UI create campaign, progress workflow, dashboard hasil.
+- Web App: UI create campaign, progress workflow, dashboard hasil.
 - Python API (FastAPI): autentikasi, CRUD campaign, orkestrasi workflow, integrasi provider AI & PixVerse, penyimpanan output.
 - PostgreSQL: persist campaign, step, output, asset metadata.
 - MinIO (S3 Object Storage): untuk gambar produk dan video.
 
 ### 3.3 Diagram Runtime (logical)
 ```text
-Desktop App (Electron)
+Web App (React/Vite)
    |
-   | HTTPS (JWT)
+   | HTTP (X-API-Key)
    v
 Python API (FastAPI)  -----> OpenAI API
    |     |
@@ -84,7 +83,7 @@ Python API (FastAPI)  -----> OpenAI API
 
 ### 4.2 Aturan Akses (MVP)
 - User hanya dapat mengakses campaign miliknya.
-- Asset (image/video) hanya dapat diakses oleh pemilik campaign (signed URL atau private bucket).
+- Untuk demo, asset dibentuk sebagai `public_url` dari MinIO. Untuk produksi, direkomendasikan memakai signed URL / bucket private per user.
 
 ---
 
@@ -114,12 +113,11 @@ Python API (FastAPI)  -----> OpenAI API
 
 ### FR-01 Autentikasi
 **Deskripsi**
-- User login menggunakan provider autentikasi (MVP: JWT). Strategi integrasi:
-  - Opsi A: Backend issue JWT sendiri (email/password sederhana)
-  - Opsi B: Integrasi dengan external IdP (JWT verification)
+- User login/register untuk mendapatkan API key (disimpan di UI).
+- Semua endpoint protected wajib header `X-API-Key`.
 
 **Acceptance**
-- API endpoint yang butuh auth menolak request tanpa token (401).
+- API endpoint yang butuh auth menolak request tanpa `X-API-Key` (401).
 
 ### FR-02 Campaign Management (CRUD)
 **Deskripsi**
@@ -186,6 +184,53 @@ Workflow step keys (MVP):
 - CRUD produk dan inventory tidak mengubah output campaign yang sudah berjalan/selesai.
 - Snapshot dibuat sekali per generate dan direferensikan oleh campaign.
 
+### FR-08 Integrations Hub (Ekspansi Subscription)
+**Deskripsi**
+- User dapat menghubungkan akun: Instagram, TikTok, Facebook, WhatsApp Business.
+- Sistem menyimpan status koneksi (ok/expired/error), scope/permission, dan waktu sync terakhir.
+- Mendukung reconnect/re-auth saat token expire.
+
+**Acceptance**
+- User dapat melihat status koneksi per provider dan memperbaiki koneksi yang putus.
+
+### FR-09 Content Calendar (Scheduling Draft, Tanpa Auto-Posting di v1)
+**Deskripsi**
+- Dari output campaign, user bisa membuat draft konten per channel (caption/hashtags/CTA/media URL/notes).
+- User bisa menjadwalkan draft di kalender (week/month view) dengan reminder dan checklist publish manual.
+
+**Acceptance**
+- User dapat membuat dan menjadwalkan draft multi-channel dari satu campaign.
+
+### FR-10 Analytics Dashboard (Engagement Terpusat)
+**Deskripsi**
+- Sistem melakukan sync metrik engagement (sejauh didukung official API) dan menampilkan agregasi:
+  - by channel
+  - by campaign
+  - by tipe konten/varian offer
+- Jika API terbatas, user dapat mengisi `post_url`/`provider_post_id` secara manual untuk tracking.
+
+**Acceptance**
+- User dapat melihat performa per campaign dan per channel pada rentang tanggal.
+
+### FR-11 Marketplace Manual Import (CSV)
+**Deskripsi**
+- Import CSV untuk produk/stok/order ringkas (opsional) dan mapping SKU marketplace ↔ master product internal.
+- Data import dapat dipakai untuk:
+  - autofill saat create campaign
+  - CTA stock-aware (mis. “stok terbatas”)
+  - rekomendasi offer
+
+**Acceptance**
+- User dapat upload CSV, melihat preview + mapping, dan hasil import muncul di Product/Inventory.
+
+### FR-12 Offer Builder (Launch Offer Profesional)
+**Deskripsi**
+- Sistem menghasilkan varian offer yang lebih “jualan” (mekanik promo, headline, CTA, guardrails) untuk tiap campaign.
+- Offer bisa dikonversi menjadi draft kalender (caption + CTA + angle).
+
+**Acceptance**
+- Offer output bersifat copy-ready dan dapat dibuat draft per channel tanpa edit besar.
+
 ---
 
 ## 7) Non-Functional Requirements (NFR)
@@ -200,6 +245,8 @@ Workflow step keys (MVP):
 **Security**
 - Jangan log token/API key.
 - Rate limit endpoint generate (per user).
+- Token integrasi disimpan aman (encrypted/at rest), tidak pernah ditampilkan penuh di UI/log.
+- Audit event minimal untuk aksi sensitif: connect/disconnect, sync, import.
 
 **Observability**
 - Record: `started_at`, `finished_at`, `duration_ms`, `error_code`, `error_message`.
@@ -218,7 +265,7 @@ Workflow step keys (MVP):
 
 ### 8.2 Tables (MVP)
 #### `users`
-Opsional, bergantung strategi autentikasi. Jika backend issue JWT sendiri, tabel ini dibutuhkan.
+Tabel user dipakai untuk login/register dan kepemilikan data.
 
 #### `products`
 - `id` uuid pk
@@ -294,8 +341,13 @@ Kolom minimum:
 ## 9) API Specification (FastAPI REST)
 
 ### 9.1 Auth
-Header:
-- `Authorization: Bearer <jwt>`
+Public:
+- `GET /health`
+- `POST /api/v1/auth/register`
+- `POST /api/v1/auth/login`
+
+Protected header:
+- `X-API-Key: ak_...`
 
 Error standar:
 ```json
@@ -363,10 +415,14 @@ Response:
 ```
 
 ### 9.3 Upload Asset
-#### POST `/api/v1/campaigns/{campaignId}/assets/product-images`
-MVP opsi:
-- multipart upload langsung ke backend (kemudian forward ke storage), atau
-- signed URL dari storage (lebih ideal)
+#### Upload via backend (dipakai UI saat ini)
+`POST /api/v1/campaigns/{campaignId}/assets/product-images/upload` (multipart `files`)
+
+#### Presign PUT (opsional)
+`POST /api/v1/campaigns/{campaignId}/assets/product-images/presign`
+
+#### Commit setelah presign (opsional)
+`POST /api/v1/campaigns/{campaignId}/assets/product-images/commit`
 
 Response:
 ```json
@@ -456,6 +512,7 @@ Response:
 {
   "campaign_id": "uuid",
   "campaign_status": "running",
+  "approval_status": "none",
   "current_step_key": "pixverse",
   "steps": [
     { "step_key": "product_analyst", "status": "success", "duration_ms": 8420 },
@@ -466,8 +523,21 @@ Response:
     { "step_key": "pixverse", "status": "running" },
     { "step_key": "campaign_manager", "status": "queued" }
   ],
-  "error": null
+  "error": null,
+  "action_required": null
 }
+```
+
+### 9.10 Approval Storyboard
+Saat `approval_status=pending_storyboard`, UI perlu meminta user approve/reject.
+
+#### POST `/api/v1/campaigns/{campaignId}/storyboard/approve`
+Response: sama seperti `GET /progress`
+
+#### POST `/api/v1/campaigns/{campaignId}/storyboard/reject`
+Response:
+```json
+{ "status": "draft" }
 ```
 
 ### 9.8 Step Output (untuk dashboard)
@@ -513,12 +583,11 @@ Timeout guideline:
 +--------------------------------------------------+
 | AI Growth Copilot                                |
 |                                                  |
-|  Email: [__________________________]             |
+|  Username: [_______________________]             |
 |  Password: [______________________]              |
 |                                                  |
-|  [ Sign In ]                                     |
+|  [ Login ]   [ Daftar ]                          |
 |                                                  |
-|  (optional) [ Continue with Google ]             |
 +--------------------------------------------------+
 ```
 
@@ -606,28 +675,32 @@ Timeout guideline:
 ---
 
 ## 12) Docker (Dev) — Layout Rekomendasi
-Electron Desktop App berjalan di host machine (bukan container). Docker Compose dipakai untuk menjalankan dependency backend (API, DB, object storage).
+Implementasi demo saat ini menjalankan Web UI + API + dependency via Docker Compose.
 Struktur service (docker compose):
 - `api` (Python FastAPI)
+- `web` (Vite dev server untuk React UI)
 - `db` (PostgreSQL)
 - `storage` (MinIO untuk S3 object storage)
+- `minio-init` (inisialisasi bucket/policy)
 
 Diagram:
 ```text
 docker-compose network
-  api:8080  -> db:5432
-  api:8080  -> storage:9000
+  web:5173  -> api:8000
+  api:8000  -> db:5432
+  api:8000  -> storage:9000
 ```
 
 Konfigurasi environment minimal:
 - `DATABASE_URL`
 - `OPENAI_API_KEY`
-- `PIXVERSE_API_KEY`
 - `S3_ENDPOINT` (MinIO)
+- `PUBLIC_S3_BASE_URL` (URL yang bisa diakses browser untuk public URL/presign)
 - `S3_ACCESS_KEY`
 - `S3_SECRET_KEY`
 - `S3_BUCKET`
 - `S3_REGION` (opsional)
+- `DEMO_API_KEY` (opsional untuk demo)
 
 ---
 
@@ -637,3 +710,41 @@ Konfigurasi environment minimal:
 - Output per step tersimpan dan dapat ditampilkan di dashboard.
 - Video PixVerse ≥ 30 detik tampil dan dapat diunduh.
 - Retry step PixVerse berfungsi tanpa mengulang step sebelumnya.
+
+---
+
+## 14) Ekspansi “Launch Dashboard” (Draft untuk Subscription)
+Bagian ini merangkum rancangan tingkat tinggi untuk fitur profesional launch: integrations → kalender draft → analytics → marketplace import.
+
+### 14.1 API (Proposed)
+**Integrations**
+- `GET /api/v1/integrations`
+- `POST /api/v1/integrations/{provider}/connect`
+- `POST /api/v1/integrations/{provider}/disconnect`
+- `POST /api/v1/integrations/{provider}/sync`
+
+**Calendar & Drafts**
+- `GET /api/v1/calendar/drafts?from=...&to=...&channel=...`
+- `POST /api/v1/calendar/drafts`
+- `PATCH /api/v1/calendar/drafts/{draft_id}`
+- `POST /api/v1/calendar/drafts/{draft_id}/schedule`
+- `POST /api/v1/calendar/drafts/{draft_id}/mark-published` (manual publish + `post_url`)
+
+**Analytics**
+- `GET /api/v1/analytics/overview?from=...&to=...`
+- `GET /api/v1/analytics/by-campaign?from=...&to=...`
+- `GET /api/v1/analytics/by-channel?from=...&to=...`
+
+**Marketplace Import**
+- `POST /api/v1/marketplace/import` (CSV upload)
+- `GET /api/v1/marketplace/import/{job_id}`
+- `POST /api/v1/marketplace/mapping` (map SKU ↔ product)
+
+### 14.2 Data Model (Proposed)
+Tabel konseptual (detail final mengikuti kebutuhan provider dan compliance):
+- `integrations` (provider, account id, status, scopes, token ref, last sync)
+- `content_drafts` (draft per channel: caption/hashtags/CTA/media URLs)
+- `content_schedule` (jadwal publish + reminder)
+- `content_publications` (post URL/ID jika sudah dipublish manual)
+- `content_metrics` (metrik per hari/per post untuk analytics)
+- `marketplace_import_jobs`, `marketplace_products`, `marketplace_product_mapping`

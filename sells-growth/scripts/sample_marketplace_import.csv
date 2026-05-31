@@ -1,0 +1,4 @@
+sku,name,category,base_description,price_amount,price_currency,location_code,qty_on_hand,qty_reserved
+SKU-001,"Keripik Pisang Coklat",makanan,"Keripik pisang renyah rasa coklat",25000,IDR,WH-JKT,120,0
+SKU-001,"Keripik Pisang Coklat",makanan,"Keripik pisang renyah rasa coklat",25000,IDR,WH-SBY,60,0
+SKU-002,"T-Shirt Cotton Premium",fashion,"Kaos cotton combed, nyaman dipakai",99000,IDR,DEFAULT,25,0

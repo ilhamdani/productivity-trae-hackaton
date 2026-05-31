@@ -333,6 +333,18 @@ export default function CampaignDetailPage() {
 
   const dem = (stepOutput as any)?.target_audience?.demographics || null;
 
+  function downloadJson(filename: string, data: unknown) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="grid gap-4 lg:grid-cols-12">
       <div className="lg:col-span-4">
@@ -420,6 +432,14 @@ export default function CampaignDetailPage() {
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={() => loadStep(selectedStep)} disabled={stepLoading}>
                 Reload
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => downloadJson(`campaign-${id}-${selectedStep}.json`, stepOutput)}
+                disabled={!stepOutput}
+              >
+                Download JSON
               </Button>
               <Button variant="ghost" size="sm" onClick={() => setShowRawJson((v) => !v)} disabled={!stepOutput}>
                 {showRawJson ? "Hide JSON" : "Raw JSON"}
@@ -662,6 +682,9 @@ export default function CampaignDetailPage() {
                           </button>
                           <a href={effectiveVideoUrl} target="_blank" className="text-leaf-700 underline underline-offset-4">
                             Open URL
+                          </a>
+                          <a href={effectiveVideoUrl} download className="text-leaf-700 underline underline-offset-4">
+                            Download
                           </a>
                         </div>
                       </div>

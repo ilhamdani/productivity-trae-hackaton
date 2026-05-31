@@ -75,10 +75,10 @@ export default function LoginPage() {
 
             <div className="mt-8 max-w-xl">
               <div className="font-display text-4xl leading-[1.05] tracking-tight">
-                Masuk dulu, baru generate campaign yang rapi.
+                Masuk untuk mulai menyusun kampanye yang lebih terarah.
               </div>
               <div className="mt-4 text-sm leading-relaxed text-slate-600">
-                Login mengeluarkan API key otomatis untuk mengakses backend. Kamu tetap bisa atur API Base URL di halaman Settings.
+                Setelah masuk, kamu bisa membuat kampanye, menyiapkan aset, dan menjalankan workflow end-to-end.
               </div>
 
               <div className="mt-6 grid gap-3 md:grid-cols-3">
@@ -90,7 +90,7 @@ export default function LoginPage() {
                 <div className="border border-slate-200/70 bg-white/70 p-3 shadow-sm backdrop-blur">
                   <div className="text-xs text-slate-500">Master</div>
                   <div className="mt-2 font-medium text-slate-900">Products</div>
-                  <div className="mt-1 text-xs text-slate-500">CRUD katalog</div>
+                  <div className="mt-1 text-xs text-slate-500">Kelola katalog produk</div>
                 </div>
                 <div className="border border-slate-200/70 bg-white/70 p-3 shadow-sm backdrop-blur">
                   <div className="text-xs text-slate-500">Ops</div>
@@ -100,14 +100,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3 text-xs text-slate-600">
-              <div className="border border-slate-200/70 bg-white px-3 py-2 shadow-sm">
-                API: {getApiBaseUrl().replace(/^https?:\/\//, "")}
-              </div>
-              <Link to="/settings" className="border border-slate-200/70 bg-white px-3 py-2 shadow-sm hover:bg-slate-50">
-                Settings
-              </Link>
-            </div>
           </div>
         </div>
       </div>
@@ -156,19 +148,8 @@ export default function LoginPage() {
               <Button onClick={submit} disabled={busy} className="w-full">
                 {busy ? "Please wait…" : mode === "login" ? "Login" : "Create Account"}
               </Button>
-              <div className="text-center text-xs text-slate-500">
-                Dengan login, API key akan disimpan di browser untuk request berikutnya.
-              </div>
             </div>
           </div>
-        </div>
-        <div className="h-px bg-slate-100" />
-        <div className="p-4 text-xs leading-relaxed text-slate-600">
-          <div className="font-medium text-slate-800">Catatan</div>
-          <ul className="mt-2 list-disc space-y-1 pl-4">
-            <li>Jika backend belum migrate, jalankan migrasi alembic terlebih dulu.</li>
-            <li>Jika API Base URL salah, atur di Settings.</li>
-          </ul>
         </div>
       </div>
     </div>

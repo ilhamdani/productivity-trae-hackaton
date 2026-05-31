@@ -23,76 +23,131 @@
 
 ---
 
-## 2) Arsitektur Eksekusi (Teknis)
+## 1.1) Ekspansi Launch Dashboard (Subscription-ready) — Draft
+Tujuan: menjadikan AI Growth Copilot bukan hanya “generator campaign”, tetapi “one dashboard” untuk launch: generate → jadwalkan multi-channel → pantau engagement → iterasi.
+
+Keputusan v1 (sesuai kebutuhan launch):
+- Social: **semua channel (Instagram, TikTok, Facebook, WhatsApp)**, namun **scheduling draft** (tanpa auto-posting dulu).
+- Marketplace: **manual import dulu** (CSV) untuk produk/stok/order ringkas + mapping SKU.
+
+Fitur kunci:
+- Integrations Hub (connect account + status + last sync)
+- Content Calendar (draft per channel + reminder + checklist publish manual)
+- Analytics Dashboard (agregasi per channel dan per campaign; dukung input manual post URL/ID)
+- Marketplace Import (CSV) + mapping SKU marketplace ↔ product internal
+- Offer Builder (varian promo/CTA yang bisa diubah jadi draft kalender)
+
+## 2) Arsitektur Eksekusi (Teknis) — Implementasi Saat Ini
+**Frontend (Demo)**
+- Web app: React + TypeScript (Vite) + Tailwind CSS
+- Menyimpan `API Base URL` + `X-API-Key` di localStorage (halaman Settings)
+
+**Backend**
+- Python FastAPI (REST) + Pydantic validation
+- Auth: API key via header `X-API-Key` (login/register mengeluarkan API key)
+
 **Orchestrator**
-- Menjalankan step agent berurutan (1→7)
-- Menyimpan status step: `queued | running | success | failed`
+- Menjalankan step agent berurutan (1→7) dan menyimpan state ke DB
+- Status per step: `queued | running | success | failed`
 - Menyimpan output JSON per step + durasi + error ringkas
-- Mendukung retry per step (idempotent)
+- Mendukung retry per step
+- Gate approval storyboard setelah step `creative_director`
 
 **AI Provider**
-- OpenAI API (text) dengan output terstruktur JSON mengikuti schema.
+- OpenAI API (text) dengan output terstruktur JSON (Pydantic models di backend)
 
 **Video Provider**
-- PixVerse API:
-  - create generation → `request_id`
-  - poll status → `completed/failed`
-  - simpan video hasil ke storage
+- PixVerse device flow + polling status
+- Menyimpan video hasil ke MinIO sebagai `campaign_assets` bertipe `pixverse_video`
 
 **Penyimpanan**
-- PostgreSQL: campaign + step output
-- MinIO (S3 Object Storage): foto produk + video hasil
+- PostgreSQL: user, API key hash, product/inventory, campaign, snapshot, step output, asset metadata
+- MinIO (S3 Object Storage): foto produk + video hasil (demo membentuk `public_url` langsung)
 
 ---
 
-## 3) Data Model Minimum (DB)
+## 3) Data Model Minimum (DB) — Implementasi Saat Ini
+**users**
+- `id, username, password_hash, created_at`
+
+**api_keys**
+- Menyimpan hash API key (API key asli hanya ditampilkan saat login/register)
+- `id, user_id, key_hash, created_at`
+
 **products**
-- `id, user_id, sku, name, base_description, category, base_price_amount, price_currency`
+- `id, user_id, sku, name, base_description, category, base_price_amount, price_currency, created_at, updated_at`
 
 **inventory**
 - `id, product_id, location_code, qty_on_hand, qty_reserved, updated_at`
+
+**campaigns**
+- `id, user_id, product_id(nullable), product_snapshot_id(nullable)`
+- `product_name, product_description, price_amount, price_currency, category`
+- `brand_tone(nullable), target_location(nullable), primary_goal(nullable)`
+- `status(draft|running|complete|failed), approval_status(none|pending_storyboard|approved_storyboard|rejected_storyboard)`
+- `created_at, updated_at`
 
 **campaign_product_snapshots**
 - Snapshot data produk + stok pada saat generate (read-only untuk workflow AI)
 - `id, campaign_id, product_id, snapshot_json(jsonb), created_at`
 
-**campaigns**
-- `id, user_id, product_id(nullable), product_snapshot_id(nullable), product_name, product_description, price, category, product_image_urls(jsonb)`
-- `status(draft|running|complete|failed)`, `created_at, updated_at`
-
 **campaign_steps**
 - `id, campaign_id, step_key, status, started_at, finished_at, duration_ms`
-- `output_json(jsonb)`, `error_message(text)`
+- `output_json(jsonb), error_code, error_message, retryable, attempt`
 
 **campaign_assets**
 - `id, campaign_id, asset_type(product_image|pixverse_video)`
-- `storage_path, public_url(optional), metadata(jsonb)`
+- `storage_path, public_url(optional), metadata(jsonb)` (mis: `status: presigned|uploading|ready`)
 
 ---
 
-## 4) Kontrak Orchestrator (Backend API)
-### 4.1 Request: Start Generation
+## 4) Kontrak Backend API (Implemented)
+### 4.1 Auth
+- `POST /api/v1/auth/register`
+- `POST /api/v1/auth/login`
+
+Response (keduanya):
 ```json
 {
-  "campaign_id": "uuid",
-  "options": {
-    "language": "id",
-    "primary_goal": "conversion",
-    "brand_tone": "hangat, premium, friendly",
-    "target_location": "Jakarta"
-  }
+  "user_id": "uuid",
+  "username": "string",
+  "api_key": "ak_..."
 }
 ```
 
+Header untuk endpoint protected:
+- `X-API-Key: ak_...`
+
+### 4.2 Campaign (Draft)
+- `GET /api/v1/campaigns`
+- `POST /api/v1/campaigns` (create draft)
+- `GET /api/v1/campaigns/{campaign_id}`
+- `PATCH /api/v1/campaigns/{campaign_id}` (update draft)
+
+### 4.3 Asset Foto Produk
+Opsi yang tersedia:
+- **Upload via backend (dipakai UI saat ini)**: `POST /api/v1/campaigns/{campaign_id}/assets/product-images/upload` (multipart `files`)
+- Presign PUT: `POST /api/v1/campaigns/{campaign_id}/assets/product-images/presign`
+- Commit setelah presign: `POST /api/v1/campaigns/{campaign_id}/assets/product-images/commit`
+
+### 4.4 Start Generate + Snapshot
+`POST /api/v1/campaigns/{campaign_id}/generate` (tanpa body)
+
 Catatan:
 - Saat generate dimulai, backend membuat `campaign_product_snapshot` dari `products + inventory` (jika campaign memakai `product_id`).
-- Workflow AI hanya membaca snapshot tersebut agar data inventory tidak tercampur dengan output AI dan tidak berubah saat stok real-time berubah.
+- Workflow AI hanya membaca snapshot agar data inventory operasional tidak tercampur output AI dan tidak berubah ketika stok berubah.
 
-### 4.2 Response: Progress Snapshot
+### 4.5 Progress, Output Step, Retry
+- `GET /api/v1/campaigns/{campaign_id}/progress`
+- `GET /api/v1/campaigns/{campaign_id}/steps/{step_key}`
+- `POST /api/v1/campaigns/{campaign_id}/steps/{step_key}/retry`
+
+Response progress (contoh):
 ```json
 {
   "campaign_id": "uuid",
   "campaign_status": "running",
+  "approval_status": "none",
   "current_step_key": "copywriter",
   "steps": [
     { "step_key": "product_analyst", "status": "success", "duration_ms": 8420 },
@@ -103,23 +158,44 @@ Catatan:
     { "step_key": "pixverse", "status": "queued" },
     { "step_key": "campaign_manager", "status": "queued" }
   ],
-  "error": null
+  "error": null,
+  "action_required": null
 }
 ```
 
-### 4.3 Response: Completed
-```json
-{
-  "campaign_id": "uuid",
-  "campaign_status": "complete",
-  "package_ref": {
-    "campaign_package_step_id": "uuid",
-    "video_asset_url": "https://..."
-  }
-}
-```
+### 4.6 Approval Storyboard
+- `POST /api/v1/campaigns/{campaign_id}/storyboard/approve`
+- `POST /api/v1/campaigns/{campaign_id}/storyboard/reject`
+
+Saat `approval_status=pending_storyboard`, `progress.action_required` akan terisi dan UI menampilkan tombol approve/reject.
 
 ---
+
+## 5) Kontrak Backend API (Proposed) — Launch Dashboard
+Catatan: bagian ini adalah draft untuk ekspansi subscription. Implementasi detail mengikuti compliance official API per provider.
+
+### 5.1 Integrations
+- `GET /api/v1/integrations`
+- `POST /api/v1/integrations/{provider}/connect`
+- `POST /api/v1/integrations/{provider}/disconnect`
+- `POST /api/v1/integrations/{provider}/sync` (manual trigger)
+
+### 5.2 Calendar & Drafts
+- `GET /api/v1/calendar/drafts?from=...&to=...&channel=...`
+- `POST /api/v1/calendar/drafts`
+- `PATCH /api/v1/calendar/drafts/{draft_id}`
+- `POST /api/v1/calendar/drafts/{draft_id}/schedule`
+- `POST /api/v1/calendar/drafts/{draft_id}/mark-published` (manual publish + `post_url` / `provider_post_id`)
+
+### 5.3 Analytics
+- `GET /api/v1/analytics/overview?from=...&to=...`
+- `GET /api/v1/analytics/by-campaign?from=...&to=...`
+- `GET /api/v1/analytics/by-channel?from=...&to=...`
+
+### 5.4 Marketplace Manual Import
+- `POST /api/v1/marketplace/import` (upload CSV)
+- `GET /api/v1/marketplace/import/{job_id}`
+- `POST /api/v1/marketplace/mapping` (map SKU ↔ product_id)
 
 # JSON Schema per Agent (Draft v1)
 

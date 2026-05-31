@@ -183,6 +183,7 @@ def _run_step(db: Session, *, campaign: Campaign, step: CampaignStep) -> dict[st
         pv = pixverse.run(
             product=product,
             options=options,
+            product_insight=step_map["product_analyst"].output_json or {},
             storyboard=step_map["creative_director"].output_json or {},
             video_plan=step_map["video_director"].output_json or {},
         )

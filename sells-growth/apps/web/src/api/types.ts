@@ -37,3 +37,21 @@ export type ProgressResponse = {
   action_required?: { type: string; step_key: string } | null;
 };
 
+export type ContentDraft = {
+  id: string;
+  campaign_id?: string | null;
+  channel: "instagram" | "tiktok" | "facebook" | "whatsapp";
+  content_type: string;
+  caption: string;
+  hashtags: string[];
+  cta_text?: string | null;
+  media_urls: string[];
+  notes?: string | null;
+  status: "draft" | "scheduled" | "published" | "archived";
+  scheduled_at?: string | null;
+  timezone?: string | null;
+  post_url?: string | null;
+  published_at?: string | null;
+  created_at: string;
+  updated_at: string;
+};

@@ -18,11 +18,15 @@ export default function AppShell() {
       ? "New Campaign"
       : location.pathname.startsWith("/campaigns/")
         ? "Campaign"
-        : location.pathname.startsWith("/inventory")
-          ? "Inventory"
-          : location.pathname.startsWith("/master-product")
-            ? "Master Product"
-          : "Campaigns";
+        : location.pathname.startsWith("/calendar")
+          ? "Content Calendar"
+          : location.pathname.startsWith("/marketplace-import")
+            ? "Marketplace Import"
+          : location.pathname.startsWith("/inventory")
+            ? "Inventory"
+            : location.pathname.startsWith("/master-product")
+              ? "Master Product"
+            : "Campaigns";
 
   return (
     <div className="min-h-dvh">
@@ -106,6 +110,43 @@ export default function AppShell() {
                   <path d="M7 20h10" />
                   <path d="M6.5 20v-9.5L12 4l5.5 6.5V20" />
                   <path d="M9 14h6" />
+                </svg>
+              </Icon>
+            </NavLink>
+
+            <NavLink
+              to="/calendar"
+              className={({ isActive }) =>
+                [
+                  "group grid h-11 w-11 place-items-center rounded-none transition",
+                  isActive ? "bg-leaf-50 text-leaf-700" : "bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700",
+                ].join(" ")
+              }
+            >
+              <Icon>
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M7 3v3" />
+                  <path d="M17 3v3" />
+                  <path d="M4 8h16" />
+                  <path d="M6 6h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" />
+                </svg>
+              </Icon>
+            </NavLink>
+
+            <NavLink
+              to="/marketplace-import"
+              className={({ isActive }) =>
+                [
+                  "group grid h-11 w-11 place-items-center rounded-none transition",
+                  isActive ? "bg-leaf-50 text-leaf-700" : "bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700",
+                ].join(" ")
+              }
+            >
+              <Icon>
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M12 3v10" />
+                  <path d="M8 9l4 4 4-4" />
+                  <path d="M4 17v3h16v-3" />
                 </svg>
               </Icon>
             </NavLink>
